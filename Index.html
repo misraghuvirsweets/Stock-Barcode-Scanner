@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raghuvir Sweets And Bakers | Stock Entry</title>
+
+<!-- Bootstrap 5 -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<!-- FontAwesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<!-- html5-qrcode: reads barcode/QR directly via device camera -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+  :root{
+    --brand-crimson:#a5192a;
+    --brand-crimson-dark:#7d1220;
+    --brand-orange:#f5871f;
+    --brand-orange-light:#fff3e6;
+    --bg-soft:#faf7f5;
+    --ink:#2b2320;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    background:var(--bg-soft);
+    color:var(--ink);
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  /* ---------- HEADER ---------- */
+  .app-header{
+    background:linear-gradient(90deg, var(--brand-crimson) 0%, var(--brand-crimson-dark) 100%);
+    color:#fff;
+    padding:.65rem 1.25rem;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+    position:sticky;
+    top:0;
+    z-index:1030;
+  }
+  .app-header .brand-logo{
+    height:44px;
+    width:44px;
+    object-fit:contain;
+    border-radius:8px;
+    background:#fff;
+    padding:3px;
+  }
+  .app-header .brand-name{
+    font-weight:700;
+    font-size:1.15rem;
+    letter-spacing:.3px;
+    line-height:1.1;
+  }
+  .app-header .brand-sub{
+    font-size:.72rem;
+    opacity:.85;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+  }
+  .branch-pill{
+    background:rgba(255,255,255,.18);
+    border:1px solid rgba(255,255,255,.35);
+    font-size:.75rem;
+    font-weight:700;
+    padding:.25rem .65rem;
+    border-radius:999px;
+    letter-spacing:.4px;
+  }
+  .live-clock{
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+    font-size:.95rem;
+  }
+  .scanner-status{
+    font-size:.8rem;
+    font-weight:600;
+    padding:.3rem .7rem;
+    border-radius:999px;
+    background:rgba(255,255,255,.15);
+  }
+  .scanner-status.ready{ color:#c8ffcf; }
+  .scanner-status.busy{ color:#ffe6a8; }
+
+  /* ---------- CONFIG BANNER (shown if API URL not set) ---------- */
+  .config-banner{
+    background:#fff3cd;
+    border-bottom:1px solid #ffe69c;
+    color:#664d03;
+    padding:.6rem 1.25rem;
+    font-size:.85rem;
+    text-align:center;
+    display:none;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .main-wrap{ padding:1.25rem; max-width:1400px; margin:0 auto; }
+
+  .panel-card{
+    background:#fff;
+    border-radius:14px;
+    border:1px solid #eee0d8;
+    box-shadow:0 2px 12px rgba(165,25,42,.06);
+  }
+  .panel-header{
+    padding:.9rem 1.1rem;
+    border-bottom:1px solid #f1e5dc;
+    font-weight:700;
+    font-size:.95rem;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+  }
+  .panel-header i{ color:var(--brand-crimson); }
+  .panel-body{ padding:1.1rem; }
+
+  /* ---------- SCAN INPUT ---------- */
+  .scan-input-group .form-control{
+    font-size:1.15rem;
+    font-weight:600;
+    padding:.75rem 1rem;
+    border:2px solid var(--brand-orange);
+    border-radius:10px 0 0 10px;
+  }
+  .scan-input-group .form-control:focus{
+    box-shadow:0 0 0 .2rem rgba(245,135,31,.25);
+    border-color:var(--brand-crimson);
+  }
+  .scan-clear-btn{
+    border:2px solid var(--brand-orange);
+    border-left:none;
+    background:#fff;
+    border-radius:0 10px 10px 0;
+  }
+
+  /* ---------- CAMERA SCAN BUTTON ---------- */
+  .btn-camera-scan{
+    width:100%;
+    background:linear-gradient(90deg, var(--brand-orange), #d9690f);
+    border:none;
+    color:#fff;
+    font-weight:700;
+    padding:.7rem;
+    border-radius:10px;
+    margin-top:.6rem;
+  }
+  .btn-camera-scan:hover{ opacity:.92; color:#fff; }
+
+  #cameraModalBody{ background:#000; padding:0; }
+  #qrReader{ width:100%; }
+  #qrReader video{ border-radius:0 0 12px 12px; }
+
+  /* ---------- PRODUCT INFO CARD ---------- */
+  .product-card{
+    border:2px dashed #e5d5c8;
+    border-radius:12px;
+    padding:1rem;
+    margin-top:1rem;
+    min-height:190px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    background:var(--brand-orange-light);
+    transition:.15s;
+  }
+  .product-card.has-item{
+    border-style:solid;
+    border-color:var(--brand-crimson);
+    background:#fff;
+  }
+  .product-card.error-item{
+    border-style:solid;
+    border-color:#dc3545;
+    background:#fff5f5;
+  }
+  .product-card .placeholder-text{
+    text-align:center;
+    color:#a99184;
+    font-size:.95rem;
+  }
+  .pc-name{
+    font-size:1.25rem;
+    font-weight:800;
+    color:var(--brand-crimson-dark);
+    margin-bottom:.15rem;
+  }
+  .pc-subname{
+    font-size:.8rem;
+    color:#a99184;
+    margin-bottom:.35rem;
+  }
+  .pc-meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.4rem;
+    margin-bottom:.6rem;
+  }
+  .pc-badge{
+    background:var(--brand-orange-light);
+    color:var(--brand-crimson-dark);
+    border:1px solid #f0d3b8;
+    font-size:.75rem;
+    font-weight:600;
+    padding:.28rem .6rem;
+    border-radius:6px;
+  }
+  .pc-stat{
+    display:flex;
+    justify-content:space-between;
+    border-bottom:1px dashed #eee;
+    padding:.3rem 0;
+    font-size:.9rem;
+  }
+  .pc-stat b{ color:var(--ink); }
+  .pc-stock-highlight{
+    font-size:1.5rem;
+    font-weight:800;
+    color:var(--brand-crimson);
+  }
+  .pc-ingredients{
+    font-size:.8rem;
+    color:#7a675e;
+    margin-top:.4rem;
+  }
+
+  /* ---------- TXN TYPE RADIO ---------- */
+  .txn-type-wrap{ display:flex; gap:.75rem; }
+  .txn-radio{ flex:1; }
+  .txn-radio input{ display:none; }
+  .txn-radio label{
+    display:block;
+    text-align:center;
+    padding:.85rem .5rem;
+    border-radius:12px;
+    border:2px solid #e5d5c8;
+    font-weight:700;
+    cursor:pointer;
+    transition:.15s;
+    font-size:1rem;
+  }
+  .txn-radio input:checked + label.inward-label{
+    background:#e8f8ec;
+    border-color:#1fa04a;
+    color:#178a3e;
+  }
+  .txn-radio input:checked + label.outward-label{
+    background:#fdeceb;
+    border-color:#dc3545;
+    color:#c22532;
+  }
+  .txn-radio input:checked + label.adjust-label{
+    background:#fff6e0;
+    border-color:#f0a500;
+    color:#a86d00;
+  }
+
+  /* ---------- QTY STEPPER ---------- */
+  .qty-stepper{ display:flex; align-items:stretch; }
+  .qty-stepper button{
+    width:52px;
+    font-size:1.4rem;
+    font-weight:700;
+    border:2px solid var(--brand-orange);
+    background:var(--brand-orange-light);
+    color:var(--brand-crimson-dark);
+  }
+  .qty-stepper .qty-input{
+    text-align:center;
+    font-size:1.4rem;
+    font-weight:800;
+    border-top:2px solid var(--brand-orange);
+    border-bottom:2px solid var(--brand-orange);
+  }
+
+  /* ---------- SUBMIT BUTTON ---------- */
+  .btn-submit-entry{
+    background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
+    border:none;
+    color:#fff;
+    font-weight:700;
+    font-size:1.05rem;
+    padding:.8rem;
+    border-radius:12px;
+    letter-spacing:.3px;
+  }
+  .btn-submit-entry:hover{ opacity:.92; color:#fff; }
+  .btn-submit-entry:disabled{ opacity:.6; }
+
+  /* ---------- LIVE FEED TABLE ---------- */
+  .feed-table thead th{
+    background:var(--brand-crimson);
+    color:#fff;
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    border:none;
+  }
+  .feed-table tbody td{ font-size:.87rem; vertical-align:middle; }
+  .badge-inward{ background:#1fa04a; }
+  .badge-outward{ background:#dc3545; }
+  .badge-adjustment{ background:#f0a500; color:#4a3200; }
+
+  .empty-feed{ text-align:center; color:#a99184; padding:2rem; }
+
+  @media (max-width: 991px){
+    .app-header .brand-name{ font-size:1rem; }
+    .live-clock{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Shown only if APPS_SCRIPT_URL below hasn't been filled in yet -->
+<div class="config-banner" id="configBanner">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  APPS_SCRIPT_URL is not set — open this file and paste your deployed Apps Script /exec URL near the top of the &lt;script&gt; section.
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<div class="app-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div class="d-flex align-items-center gap-2">
+    <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
+    <div>
+      <div class="brand-name">Raghuvir Sweets And Bakers</div>
+      <div class="brand-sub">Stock Entry Dashboard</div>
+    </div>
+    <span class="branch-pill ms-2" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
+  </div>
+  <div class="d-flex align-items-center gap-3">
+    <span class="live-clock" id="liveClock">--:--:--</span>
+    <span class="scanner-status ready" id="scannerStatus"><i class="fa-solid fa-circle" style="font-size:.55rem;"></i> Ready</span>
+  </div>
+</div>
+
+<!-- ===================== MAIN ===================== -->
+<div class="main-wrap">
+  <div class="row g-3">
+
+    <!-- ============ LEFT: SCAN + PRODUCT CARD ============ -->
+    <div class="col-lg-6">
+      <div class="panel-card h-100">
+        <div class="panel-header"><i class="fa-solid fa-barcode"></i> Scan &amp; Identify Item</div>
+        <div class="panel-body">
+
+          <label class="form-label fw-semibold small text-muted">SCAN BARCODE / ENTER CODE</label>
+          <div class="input-group scan-input-group mb-2">
+            <input type="text" id="barcodeInput" class="form-control" placeholder="Type code and press Enter..." autocomplete="off" autofocus>
+            <button class="btn scan-clear-btn" id="clearBarcodeBtn" type="button" title="Clear">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Camera Scan Trigger -->
+          <button class="btn btn-camera-scan" id="openCameraBtn" type="button">
+            <i class="fa-solid fa-camera"></i> Scan Barcode with Camera
+          </button>
+
+          <div class="mt-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#manualSearchWrap">
+              <i class="fa-solid fa-magnifying-glass"></i> Can't scan? Search manually
+            </button>
+          </div>
+          <div class="collapse" id="manualSearchWrap">
+            <select class="form-select mt-2" id="manualSearchSelect">
+              <option value="">-- Loading item list... --</option>
+            </select>
+          </div>
+
+          <!-- Product Info Card -->
+          <div class="product-card" id="productCard">
+            <div class="placeholder-text">
+              <i class="fa-solid fa-box-open fa-2x mb-2"></i><br>
+              Scan a barcode to view item details
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT: QTY + ACTION ============ -->
+    <div class="col-lg-6">
+      <div class="panel-card h-100">
+        <div class="panel-header"><i class="fa-solid fa-clipboard-list"></i> Entry Details</div>
+        <div class="panel-body">
+
+          <label class="form-label fw-semibold small text-muted">TRANSACTION TYPE</label>
+          <div class="txn-type-wrap mb-3">
+            <div class="txn-radio">
+              <input type="radio" name="txnType" id="txnInward" value="INWARD" checked>
+              <label for="txnInward" class="inward-label"><i class="fa-solid fa-arrow-down"></i><br>INWARD<br><small class="fw-normal">Stock Received</small></label>
+            </div>
+            <div class="txn-radio">
+              <input type="radio" name="txnType" id="txnOutward" value="OUTWARD">
+              <label for="txnOutward" class="outward-label"><i class="fa-solid fa-arrow-up"></i><br>OUTWARD<br><small class="fw-normal">Stock Dispatched</small></label>
+            </div>
+            <div class="txn-radio">
+              <input type="radio" name="txnType" id="txnAdjust" value="ADJUSTMENT">
+              <label for="txnAdjust" class="adjust-label"><i class="fa-solid fa-sliders"></i><br>ADJUST<br><small class="fw-normal">Set Exact Stock</small></label>
+            </div>
+          </div>
+
+          <label class="form-label fw-semibold small text-muted">ENTRY QUANTITY</label>
+          <div class="qty-stepper mb-3">
+            <button type="button" id="qtyMinusBtn"><i class="fa-solid fa-minus"></i></button>
+            <input type="number" id="entryQtyInput" class="form-control qty-input" min="1" step="1" value="1">
+            <button type="button" id="qtyPlusBtn"><i class="fa-solid fa-plus"></i></button>
+          </div>
+
+          <label class="form-label fw-semibold small text-muted">OPERATOR / SUPERVISOR NAME</label>
+          <input type="text" id="operatorNameInput" class="form-control mb-3" placeholder="Enter your name...">
+
+          <label class="form-label fw-semibold small text-muted">REMARKS <span class="text-muted fw-normal">(optional)</span></label>
+          <input type="text" id="remarksInput" class="form-control mb-3" placeholder="e.g. Damaged pack, supplier return, etc.">
+
+          <button class="btn btn-submit-entry w-100" id="submitBtn" type="button" disabled>
+            <i class="fa-solid fa-check-circle"></i> Submit Stock Entry
+          </button>
+          <div class="form-text text-center mt-2">Scan an item first to enable submission</div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ BOTTOM: LIVE FEED ============ -->
+    <div class="col-12">
+      <div class="panel-card">
+        <div class="panel-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-list-check"></i> Live Stock Scan Feed <small class="text-muted fw-normal" id="feedSubtitle">(last 10 entries)</small></span>
+          <button class="btn btn-sm btn-outline-secondary" id="refreshFeedBtn" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="panel-body p-0">
+          <div class="table-responsive">
+            <table class="table feed-table mb-0">
+              <thead>
+                <tr>
+                  <th>Txn ID</th>
+                  <th>Type</th>
+                  <th>Item</th>
+                  <th>Code</th>
+                  <th>Qty</th>
+                  <th>Final Stock</th>
+                  <th>Operator</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="feedTableBody">
+                <tr><td colspan="8" class="empty-feed">Loading recent entries...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== CAMERA SCAN MODAL ===================== -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="fa-solid fa-camera"></i> Point camera at the barcode</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" id="closeCameraBtn"></button>
+      </div>
+      <div class="modal-body" id="cameraModalBody">
+        <div id="qrReader"></div>
+      </div>
+      <div class="modal-footer">
+        <small class="text-muted">Hold steady — it captures automatically once readable.</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TOAST CONTAINER ===================== -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1080;">
+  <div id="appToast" class="toast align-items-center border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="appToastBody">Message</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Audio feedback -->
+<audio id="beepSuccess" preload="auto">
+  <source src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" type="audio/ogg">
+</audio>
+<audio id="beepError" preload="auto">
+  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ============================================================================
+   ⚠️ REQUIRED CONFIG — paste your deployed Apps Script Web App URL here.
+   Deploy Code.gs as: Deploy > New deployment > Web app
+                       Execute as: Me | Who has access: Anyone
+   Then copy the URL ending in /exec and paste it below.
+============================================================================ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec'; // e.g. https://script.google.com/macros/s/AKfycb.../exec
+
+/* ============================================================================
+   BRANCH CONTEXT — read from the page URL, e.g.:
+     index.html?branch=BR1   -> Branch 1
+     index.html?branch=BR2   -> Branch 2
+   Give each branch its own bookmarked/shared link with this query param.
+============================================================================ */
+const BRANCH_LABELS = { BR1: 'Branch 1', BR2: 'Branch 2' };
+const urlParams = new URLSearchParams(window.location.search);
+const BRANCH_ID = (function () {
+  const p = (urlParams.get('branch') || '').toUpperCase();
+  return BRANCH_LABELS[p] ? p : 'BR1';
+})();
+const BRANCH_LABEL = BRANCH_LABELS[BRANCH_ID];
+
+/* ============================================================================
+   STATE
+============================================================================ */
+let currentItem = null;
+let lookupInFlight = false;
+let html5QrCode = null;
+let cameraScanActive = false;
+
+/* ============================================================================
+   INIT
+============================================================================ */
+document.addEventListener('DOMContentLoaded', function () {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
+    document.getElementById('configBanner').style.display = 'block';
+  }
+  document.getElementById('branchPill').innerHTML = '<i class="fa-solid fa-store"></i> ' + BRANCH_LABEL;
+  document.getElementById('feedSubtitle').textContent = '(' + BRANCH_LABEL + ' — last 10 entries)';
+
+  startLiveClock();
+  focusBarcodeInput();
+  loadRecentFeed();
+  loadManualSearchList();
+  wireEvents();
+});
+
+function wireEvents() {
+  const barcodeInput = document.getElementById('barcodeInput');
+
+  barcodeInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = barcodeInput.value.trim();
+      if (val.length > 0) handleBarcodeLookup(val);
+    }
+  });
+
+  document.getElementById('clearBarcodeBtn').addEventListener('click', function () {
+    resetScanState();
+    focusBarcodeInput();
+  });
+
+  document.getElementById('openCameraBtn').addEventListener('click', openCameraScanner);
+  document.getElementById('closeCameraBtn').addEventListener('click', stopCameraScanner);
+  document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCameraScanner);
+
+  document.getElementById('manualSearchSelect').addEventListener('change', function () {
+    const code = this.value;
+    if (code) {
+      document.getElementById('barcodeInput').value = code;
+      handleBarcodeLookup(code);
+      const collapseEl = document.getElementById('manualSearchWrap');
+      bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+    }
+  });
+
+  document.getElementById('qtyMinusBtn').addEventListener('click', function () { stepQty(-1); });
+  document.getElementById('qtyPlusBtn').addEventListener('click', function () { stepQty(1); });
+
+  document.getElementById('submitBtn').addEventListener('click', submitStockEntry);
+  document.getElementById('refreshFeedBtn').addEventListener('click', loadRecentFeed);
+}
+
+/* ============================================================================
+   LIVE CLOCK
+============================================================================ */
+function startLiveClock() {
+  function tick() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('liveClock').textContent = h + ':' + m + ':' + s;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+function focusBarcodeInput() {
+  const el = document.getElementById('barcodeInput');
+  if (el && !cameraScanActive) el.focus();
+}
+
+/* ============================================================================
+   SCANNER STATUS INDICATOR
+============================================================================ */
+function setScannerStatus(state) {
+  const el = document.getElementById('scannerStatus');
+  if (state === 'busy') {
+    el.className = 'scanner-status busy';
+    el.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size:.7rem;"></i> Looking up...';
+  } else {
+    el.className = 'scanner-status ready';
+    el.innerHTML = '<i class="fa-solid fa-circle" style="font-size:.55rem;"></i> Ready';
+  }
+}
+
+/* ============================================================================
+   CAMERA BARCODE SCANNING (html5-qrcode)
+============================================================================ */
+function openCameraScanner() {
+  const modalEl = document.getElementById('cameraModal');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+
+  html5QrCode = new Html5Qrcode('qrReader');
+  cameraScanActive = true;
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 260, height: 160 },
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.QR_CODE
+    ]
+  };
+
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    config,
+    function onScanSuccess(decodedText) {
+      if (lookupInFlight) return;
+      document.getElementById('barcodeInput').value = decodedText;
+      stopCameraScanner();
+      modal.hide();
+      handleBarcodeLookup(decodedText);
+    },
+    function onScanFailure() { /* silent — called continuously while scanning */ }
+  ).catch(function (err) {
+    showToast('Could not start camera: ' + err, 'danger');
+    modal.hide();
+  });
+}
+
+function stopCameraScanner() {
+  if (html5QrCode && cameraScanActive) {
+    html5QrCode.stop().then(function () {
+      html5QrCode.clear();
+      cameraScanActive = false;
+      focusBarcodeInput();
+    }).catch(function () {
+      cameraScanActive = false;
+    });
+  }
+}
+
+/* ============================================================================
+   API HELPERS (fetch-based, replacing google.script.run)
+============================================================================ */
+function apiGet(params) {
+  const query = new URLSearchParams(params).toString();
+  return fetch(APPS_SCRIPT_URL + '?' + query, { method: 'GET' })
+    .then(function (res) { return res.json(); });
+}
+
+function apiPost(bodyObj) {
+  // text/plain avoids a CORS preflight request, which Apps Script web apps don't handle.
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(bodyObj)
+  }).then(function (res) { return res.json(); });
+}
+
+/* ============================================================================
+   BARCODE LOOKUP FLOW
+============================================================================ */
+function handleBarcodeLookup(code) {
+  if (lookupInFlight) return;
+  lookupInFlight = true;
+  setScannerStatus('busy');
+
+  apiGet({ action: 'getItemByBarcode', code: code, branch: BRANCH_ID })
+    .then(function (result) {
+      lookupInFlight = false;
+      setScannerStatus('ready');
+      if (result.found) {
+        playSound('beepSuccess');
+        renderProductCard(result.item);
+        currentItem = result.item;
+        enableSubmit(true);
+        document.getElementById('entryQtyInput').focus();
+        document.getElementById('entryQtyInput').select();
+      } else {
+        playSound('beepError');
+        renderProductCardError(result.message || 'Item not found.');
+        currentItem = null;
+        enableSubmit(false);
+        showToast(result.message || 'Barcode not found.', 'danger');
+        setTimeout(function () {
+          document.getElementById('barcodeInput').value = '';
+          focusBarcodeInput();
+        }, 900);
+      }
+    })
+    .catch(function (err) {
+      lookupInFlight = false;
+      setScannerStatus('ready');
+      playSound('beepError');
+      showToast('Lookup error: ' + err.message, 'danger');
+    });
+}
+
+function renderProductCard(item) {
+  const card = document.getElementById('productCard');
+  card.className = 'product-card has-item';
+
+  const ingredients = [item.ingredients1, item.ingredients2, item.ingredients3, item.ingredients4]
+    .filter(function (x) { return x && String(x).trim() !== ''; })
+    .join(', ');
+
+  const displayName = item.printName || item.productName;
+  const subName = (item.printName && item.productName && item.printName !== item.productName) ? item.productName : '';
+
+  card.innerHTML =
+    '<div class="pc-name"><i class="fa-solid fa-tag me-1"></i>' + escapeHtml(displayName) + '</div>' +
+    (subName ? '<div class="pc-subname">' + escapeHtml(subName) + '</div>' : '') +
+    '<div class="pc-meta-row">' +
+      '<span class="pc-badge"><i class="fa-solid fa-building"></i> ' + escapeHtml(item.dept || '-') + '</span>' +
+      '<span class="pc-badge"><i class="fa-solid fa-layer-group"></i> ' + escapeHtml(item.subGroup || '-') + '</span>' +
+      '<span class="pc-badge"><i class="fa-solid fa-barcode"></i> ' + escapeHtml(item.userDefinedCode || '-') + '</span>' +
+    '</div>' +
+    '<div class="pc-stat"><span>Sale Rate</span><b>' + formatCurrency(item.saleRate) + '</b></div>' +
+    '<div class="pc-stat"><span>Net Weight</span><b>' + escapeHtml(item.netWeight || '-') + '</b></div>' +
+    '<div class="pc-stat"><span>Stock Unit</span><b>' + escapeHtml(item.stockUnit || '-') + '</b></div>' +
+    '<div class="pc-stat"><span>Best Before</span><b>' + escapeHtml(item.bestBefore || '-') + '</b></div>' +
+    '<div class="d-flex justify-content-between align-items-center mt-2">' +
+      '<span class="text-muted small">Current Stock (' + escapeHtml(BRANCH_LABEL) + ')</span>' +
+      '<span class="pc-stock-highlight">' + Number(item.currentStock).toLocaleString() + '</span>' +
+    '</div>' +
+    (ingredients ? '<div class="pc-ingredients"><i class="fa-solid fa-wheat-awn"></i> ' + escapeHtml(ingredients) + '</div>' : '');
+}
+
+function renderProductCardError(message) {
+  const card = document.getElementById('productCard');
+  card.className = 'product-card error-item';
+  card.innerHTML =
+    '<div class="placeholder-text text-danger">' +
+      '<i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i><br>' +
+      escapeHtml(message) +
+    '</div>';
+}
+
+function resetScanState() {
+  document.getElementById('barcodeInput').value = '';
+  const card = document.getElementById('productCard');
+  card.className = 'product-card';
+  card.innerHTML = '<div class="placeholder-text"><i class="fa-solid fa-box-open fa-2x mb-2"></i><br>Scan a barcode to view item details</div>';
+  currentItem = null;
+  enableSubmit(false);
+  document.getElementById('entryQtyInput').value = 1;
+  document.getElementById('remarksInput').value = '';
+}
+
+/* ============================================================================
+   QUANTITY STEPPER
+============================================================================ */
+function stepQty(delta) {
+  const input = document.getElementById('entryQtyInput');
+  let val = parseInt(input.value, 10);
+  if (isNaN(val)) val = 1;
+  val = Math.max(1, val + delta);
+  input.value = val;
+}
+
+/* ============================================================================
+   SUBMIT STOCK ENTRY
+============================================================================ */
+function enableSubmit(enabled) {
+  document.getElementById('submitBtn').disabled = !enabled;
+}
+
+function submitStockEntry() {
+  if (!currentItem) {
+    showToast('Please scan a valid item first.', 'warning');
+    return;
+  }
+
+  const txnType = document.querySelector('input[name="txnType"]:checked').value;
+  const entryQty = parseInt(document.getElementById('entryQtyInput').value, 10);
+  const operatorName = document.getElementById('operatorNameInput').value.trim();
+  const remarks = document.getElementById('remarksInput').value.trim();
+
+  if (isNaN(entryQty) || entryQty <= 0) {
+    showToast('Please enter a valid quantity.', 'warning');
+    return;
+  }
+  if (!operatorName) {
+    showToast('Please enter operator / supervisor name.', 'warning');
+    document.getElementById('operatorNameInput').focus();
+    return;
+  }
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+
+  const payload = {
+    branchId: BRANCH_ID,
+    barcodeCode: currentItem.userDefinedCode,
+    txnType: txnType,
+    entryQty: entryQty,
+    operatorName: operatorName,
+    remarks: remarks
+  };
+
+  apiPost({ action: 'recordStockTransaction', data: payload })
+    .then(function (result) {
+      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Submit Stock Entry';
+      if (result.success) {
+        playSound('beepSuccess');
+        showToast(result.txnId + ' saved — ' + result.printName + ' | new stock: ' + result.finalStock, 'success');
+        resetScanState();
+        loadRecentFeed();
+        focusBarcodeInput();
+      } else {
+        playSound('beepError');
+        showToast(result.message || 'Failed to record entry.', 'danger');
+        submitBtn.disabled = false;
+      }
+    })
+    .catch(function (err) {
+      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Submit Stock Entry';
+      playSound('beepError');
+      showToast('Error: ' + err.message, 'danger');
+      submitBtn.disabled = false;
+    });
+}
+
+/* ============================================================================
+   LIVE FEED
+============================================================================ */
+function loadRecentFeed() {
+  apiGet({ action: 'getRecentLogs', branch: BRANCH_ID })
+    .then(renderFeedTable)
+    .catch(function () {
+      document.getElementById('feedTableBody').innerHTML =
+        '<tr><td colspan="8" class="empty-feed">Could not load feed.</td></tr>';
+    });
+}
+
+function renderFeedTable(logs) {
+  const body = document.getElementById('feedTableBody');
+  if (!logs || logs.length === 0) {
+    body.innerHTML = '<tr><td colspan="8" class="empty-feed">No stock entries yet for ' + escapeHtml(BRANCH_LABEL) + '.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = logs.map(function (log) {
+    const badgeClass = log.txnType === 'INWARD' ? 'badge-inward'
+                      : log.txnType === 'OUTWARD' ? 'badge-outward'
+                      : 'badge-adjustment';
+    return (
+      '<tr>' +
+        '<td class="fw-semibold">' + escapeHtml(log.txnId) + '</td>' +
+        '<td><span class="badge ' + badgeClass + '">' + escapeHtml(log.txnType) + '</span></td>' +
+        '<td>' + escapeHtml(log.itemName) + '</td>' +
+        '<td class="text-muted">' + escapeHtml(log.barcodeCode) + '</td>' +
+        '<td>' + escapeHtml(String(log.entryQty)) + '</td>' +
+        '<td class="fw-semibold">' + escapeHtml(String(log.finalStock)) + '</td>' +
+        '<td>' + escapeHtml(log.operatorName) + '</td>' +
+        '<td class="text-muted small">' + escapeHtml(log.dateTime) + '</td>' +
+      '</tr>'
+    );
+  }).join('');
+}
+
+/* ============================================================================
+   MANUAL SEARCH FALLBACK
+============================================================================ */
+function loadManualSearchList() {
+  apiGet({ action: 'getItemList' })
+    .then(function (items) {
+      const select = document.getElementById('manualSearchSelect');
+      if (!items || items.length === 0) {
+        select.innerHTML = '<option value="">-- No items found --</option>';
+        return;
+      }
+      select.innerHTML = '<option value="">-- Select an item --</option>' +
+        items.map(function (it) {
+          return '<option value="' + escapeHtml(it.code) + '">' + escapeHtml(it.printName) + ' (' + escapeHtml(it.code) + ')</option>';
+        }).join('');
+    })
+    .catch(function () {
+      document.getElementById('manualSearchSelect').innerHTML = '<option value="">-- Failed to load --</option>';
+    });
+}
+
+/* ============================================================================
+   UTILITIES
+============================================================================ */
+function playSound(id) {
+  const audio = document.getElementById(id);
+  if (audio) {
+    audio.currentTime = 0;
+    audio.play().catch(function () { /* autoplay may be blocked until first user gesture */ });
+  }
+}
+
+function showToast(message, type) {
+  const toastEl = document.getElementById('appToast');
+  const toastBody = document.getElementById('appToastBody');
+  toastEl.className = 'toast align-items-center text-white border-0 bg-' + (type || 'primary');
+  toastBody.textContent = message;
+  const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3200 });
+  toast.show();
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatCurrency(val) {
+  const num = Number(val);
+  if (isNaN(num)) return '-';
+  return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+</script>
+</body>
+</html>
