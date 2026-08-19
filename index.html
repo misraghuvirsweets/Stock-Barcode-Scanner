@@ -621,18 +621,42 @@ function stopCameraScanner() {
    API HELPERS (fetch-based)
 ============================================================================ */
 function apiGet(params) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
+    return Promise.reject(new Error('APPS_SCRIPT_URL is not set at the top of the script.'));
+  }
   const query = new URLSearchParams(params).toString();
   return fetch(APPS_SCRIPT_URL + '?' + query, { method: 'GET' })
-    .then(function (res) { return res.json(); });
+    .then(function (res) { return res.text(); })
+    .then(function (text) {
+      try {
+        return JSON.parse(text);
+      } catch (parseErr) {
+        // Apps Script returned HTML (e.g. a login/permission page) instead of JSON —
+        // almost always means the deployment isn't set to "Anyone" access, or the
+        // /exec URL is wrong / from an old deployment.
+        throw new Error('API did not return valid data. Check that the Apps Script deployment access is set to "Anyone" and the URL is correct.');
+      }
+    });
 }
 
 function apiPost(bodyObj) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
+    return Promise.reject(new Error('APPS_SCRIPT_URL is not set at the top of the script.'));
+  }
   // text/plain avoids a CORS preflight request, which Apps Script web apps don't handle.
   return fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(bodyObj)
-  }).then(function (res) { return res.json(); });
+  })
+    .then(function (res) { return res.text(); })
+    .then(function (text) {
+      try {
+        return JSON.parse(text);
+      } catch (parseErr) {
+        throw new Error('API did not return valid data. Check the Apps Script deployment access is set to "Anyone" and the URL is correct.');
+      }
+    });
 }
 
 /* ============================================================================
