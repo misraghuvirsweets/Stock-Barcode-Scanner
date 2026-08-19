@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Raghuvir Sweets And Bakers | Stock Entry</title>
+<title>Raghuvir Sweets And Bakers | Stock Taking</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
@@ -215,7 +215,7 @@
   }
   .pc-stat b{ color:var(--ink); }
   .pc-stock-highlight{
-    font-size:1.5rem;
+    font-size:1.4rem;
     font-weight:800;
     color:var(--brand-crimson);
   }
@@ -223,37 +223,6 @@
     font-size:.8rem;
     color:#7a675e;
     margin-top:.4rem;
-  }
-
-  /* ---------- TXN TYPE RADIO ---------- */
-  .txn-type-wrap{ display:flex; gap:.75rem; }
-  .txn-radio{ flex:1; }
-  .txn-radio input{ display:none; }
-  .txn-radio label{
-    display:block;
-    text-align:center;
-    padding:.85rem .5rem;
-    border-radius:12px;
-    border:2px solid #e5d5c8;
-    font-weight:700;
-    cursor:pointer;
-    transition:.15s;
-    font-size:1rem;
-  }
-  .txn-radio input:checked + label.inward-label{
-    background:#e8f8ec;
-    border-color:#1fa04a;
-    color:#178a3e;
-  }
-  .txn-radio input:checked + label.outward-label{
-    background:#fdeceb;
-    border-color:#dc3545;
-    color:#c22532;
-  }
-  .txn-radio input:checked + label.adjust-label{
-    background:#fff6e0;
-    border-color:#f0a500;
-    color:#a86d00;
   }
 
   /* ---------- QTY STEPPER ---------- */
@@ -298,9 +267,6 @@
     border:none;
   }
   .feed-table tbody td{ font-size:.87rem; vertical-align:middle; }
-  .badge-inward{ background:#1fa04a; }
-  .badge-outward{ background:#dc3545; }
-  .badge-adjustment{ background:#f0a500; color:#4a3200; }
 
   .empty-feed{ text-align:center; color:#a99184; padding:2rem; }
 
@@ -324,7 +290,7 @@
     <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
     <div>
       <div class="brand-name">Raghuvir Sweets And Bakers</div>
-      <div class="brand-sub">Stock Entry Dashboard</div>
+      <div class="brand-sub">Month-End Stock Taking</div>
     </div>
     <span class="branch-pill ms-2" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
   </div>
@@ -380,32 +346,16 @@
       </div>
     </div>
 
-    <!-- ============ RIGHT: QTY + ACTION ============ -->
+    <!-- ============ RIGHT: COUNTED QTY + ACTION ============ -->
     <div class="col-lg-6">
       <div class="panel-card h-100">
-        <div class="panel-header"><i class="fa-solid fa-clipboard-list"></i> Entry Details</div>
+        <div class="panel-header"><i class="fa-solid fa-clipboard-check"></i> Physical Stock Count</div>
         <div class="panel-body">
 
-          <label class="form-label fw-semibold small text-muted">TRANSACTION TYPE</label>
-          <div class="txn-type-wrap mb-3">
-            <div class="txn-radio">
-              <input type="radio" name="txnType" id="txnInward" value="INWARD" checked>
-              <label for="txnInward" class="inward-label"><i class="fa-solid fa-arrow-down"></i><br>INWARD<br><small class="fw-normal">Stock Received</small></label>
-            </div>
-            <div class="txn-radio">
-              <input type="radio" name="txnType" id="txnOutward" value="OUTWARD">
-              <label for="txnOutward" class="outward-label"><i class="fa-solid fa-arrow-up"></i><br>OUTWARD<br><small class="fw-normal">Stock Dispatched</small></label>
-            </div>
-            <div class="txn-radio">
-              <input type="radio" name="txnType" id="txnAdjust" value="ADJUSTMENT">
-              <label for="txnAdjust" class="adjust-label"><i class="fa-solid fa-sliders"></i><br>ADJUST<br><small class="fw-normal">Set Exact Stock</small></label>
-            </div>
-          </div>
-
-          <label class="form-label fw-semibold small text-muted">ENTRY QUANTITY</label>
+          <label class="form-label fw-semibold small text-muted">COUNTED QUANTITY (physically counted on shelf)</label>
           <div class="qty-stepper mb-3">
             <button type="button" id="qtyMinusBtn"><i class="fa-solid fa-minus"></i></button>
-            <input type="number" id="entryQtyInput" class="form-control qty-input" min="1" step="1" value="1">
+            <input type="number" id="countedQtyInput" class="form-control qty-input" min="0" step="1" value="0">
             <button type="button" id="qtyPlusBtn"><i class="fa-solid fa-plus"></i></button>
           </div>
 
@@ -413,12 +363,12 @@
           <input type="text" id="operatorNameInput" class="form-control mb-3" placeholder="Enter your name...">
 
           <label class="form-label fw-semibold small text-muted">REMARKS <span class="text-muted fw-normal">(optional)</span></label>
-          <input type="text" id="remarksInput" class="form-control mb-3" placeholder="e.g. Damaged pack, supplier return, etc.">
+          <input type="text" id="remarksInput" class="form-control mb-3" placeholder="e.g. Damaged pack found, expired stock, etc.">
 
           <button class="btn btn-submit-entry w-100" id="submitBtn" type="button" disabled>
-            <i class="fa-solid fa-check-circle"></i> Submit Stock Entry
+            <i class="fa-solid fa-check-circle"></i> Save Stock Count
           </button>
-          <div class="form-text text-center mt-2">Scan an item first to enable submission</div>
+          <div class="form-text text-center mt-2">Scan an item first to enable saving</div>
 
         </div>
       </div>
@@ -428,7 +378,7 @@
     <div class="col-12">
       <div class="panel-card">
         <div class="panel-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-list-check"></i> Live Stock Scan Feed <small class="text-muted fw-normal" id="feedSubtitle">(last 10 entries)</small></span>
+          <span><i class="fa-solid fa-list-check"></i> Recent Stock Counts <small class="text-muted fw-normal" id="feedSubtitle">(last 10 entries)</small></span>
           <button class="btn btn-sm btn-outline-secondary" id="refreshFeedBtn" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
         <div class="panel-body p-0">
@@ -437,17 +387,16 @@
               <thead>
                 <tr>
                   <th>Txn ID</th>
-                  <th>Type</th>
                   <th>Item</th>
                   <th>Code</th>
-                  <th>Qty</th>
-                  <th>Final Stock</th>
+                  <th>Counted Qty</th>
                   <th>Operator</th>
                   <th>Time</th>
+                  <th>Remarks</th>
                 </tr>
               </thead>
               <tbody id="feedTableBody">
-                <tr><td colspan="8" class="empty-feed">Loading recent entries...</td></tr>
+                <tr><td colspan="7" class="empty-feed">Loading recent entries...</td></tr>
               </tbody>
             </table>
           </div>
@@ -502,7 +451,7 @@
                        Execute as: Me | Who has access: Anyone
    Then copy the URL ending in /exec and paste it below.
 ============================================================================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec'; // e.g. https://script.google.com/macros/s/AKfycb.../exec
+const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE'; // e.g. https://script.google.com/macros/s/AKfycb.../exec
 
 /* ============================================================================
    BRANCH CONTEXT — read from the page URL, e.g.:
@@ -576,7 +525,7 @@ function wireEvents() {
   document.getElementById('qtyMinusBtn').addEventListener('click', function () { stepQty(-1); });
   document.getElementById('qtyPlusBtn').addEventListener('click', function () { stepQty(1); });
 
-  document.getElementById('submitBtn').addEventListener('click', submitStockEntry);
+  document.getElementById('submitBtn').addEventListener('click', submitStockCount);
   document.getElementById('refreshFeedBtn').addEventListener('click', loadRecentFeed);
 }
 
@@ -669,7 +618,7 @@ function stopCameraScanner() {
 }
 
 /* ============================================================================
-   API HELPERS (fetch-based, replacing google.script.run)
+   API HELPERS (fetch-based)
 ============================================================================ */
 function apiGet(params) {
   const query = new URLSearchParams(params).toString();
@@ -703,8 +652,9 @@ function handleBarcodeLookup(code) {
         renderProductCard(result.item);
         currentItem = result.item;
         enableSubmit(true);
-        document.getElementById('entryQtyInput').focus();
-        document.getElementById('entryQtyInput').select();
+        document.getElementById('countedQtyInput').value = 0;
+        document.getElementById('countedQtyInput').focus();
+        document.getElementById('countedQtyInput').select();
       } else {
         playSound('beepError');
         renderProductCardError(result.message || 'Item not found.');
@@ -736,6 +686,10 @@ function renderProductCard(item) {
   const displayName = item.printName || item.productName;
   const subName = (item.printName && item.productName && item.printName !== item.productName) ? item.productName : '';
 
+  const lastCountDisplay = (item.lastCountedStock === null || item.lastCountedStock === undefined)
+    ? 'Not counted yet'
+    : Number(item.lastCountedStock).toLocaleString();
+
   card.innerHTML =
     '<div class="pc-name"><i class="fa-solid fa-tag me-1"></i>' + escapeHtml(displayName) + '</div>' +
     (subName ? '<div class="pc-subname">' + escapeHtml(subName) + '</div>' : '') +
@@ -749,8 +703,8 @@ function renderProductCard(item) {
     '<div class="pc-stat"><span>Stock Unit</span><b>' + escapeHtml(item.stockUnit || '-') + '</b></div>' +
     '<div class="pc-stat"><span>Best Before</span><b>' + escapeHtml(item.bestBefore || '-') + '</b></div>' +
     '<div class="d-flex justify-content-between align-items-center mt-2">' +
-      '<span class="text-muted small">Current Stock (' + escapeHtml(BRANCH_LABEL) + ')</span>' +
-      '<span class="pc-stock-highlight">' + Number(item.currentStock).toLocaleString() + '</span>' +
+      '<span class="text-muted small">Last Counted (' + escapeHtml(BRANCH_LABEL) + ')</span>' +
+      '<span class="pc-stock-highlight">' + escapeHtml(lastCountDisplay) + '</span>' +
     '</div>' +
     (ingredients ? '<div class="pc-ingredients"><i class="fa-solid fa-wheat-awn"></i> ' + escapeHtml(ingredients) + '</div>' : '');
 }
@@ -772,7 +726,7 @@ function resetScanState() {
   card.innerHTML = '<div class="placeholder-text"><i class="fa-solid fa-box-open fa-2x mb-2"></i><br>Scan a barcode to view item details</div>';
   currentItem = null;
   enableSubmit(false);
-  document.getElementById('entryQtyInput').value = 1;
+  document.getElementById('countedQtyInput').value = 0;
   document.getElementById('remarksInput').value = '';
 }
 
@@ -780,33 +734,32 @@ function resetScanState() {
    QUANTITY STEPPER
 ============================================================================ */
 function stepQty(delta) {
-  const input = document.getElementById('entryQtyInput');
+  const input = document.getElementById('countedQtyInput');
   let val = parseInt(input.value, 10);
-  if (isNaN(val)) val = 1;
-  val = Math.max(1, val + delta);
+  if (isNaN(val)) val = 0;
+  val = Math.max(0, val + delta);
   input.value = val;
 }
 
 /* ============================================================================
-   SUBMIT STOCK ENTRY
+   SUBMIT STOCK COUNT
 ============================================================================ */
 function enableSubmit(enabled) {
   document.getElementById('submitBtn').disabled = !enabled;
 }
 
-function submitStockEntry() {
+function submitStockCount() {
   if (!currentItem) {
     showToast('Please scan a valid item first.', 'warning');
     return;
   }
 
-  const txnType = document.querySelector('input[name="txnType"]:checked').value;
-  const entryQty = parseInt(document.getElementById('entryQtyInput').value, 10);
+  const countedQty = parseInt(document.getElementById('countedQtyInput').value, 10);
   const operatorName = document.getElementById('operatorNameInput').value.trim();
   const remarks = document.getElementById('remarksInput').value.trim();
 
-  if (isNaN(entryQty) || entryQty <= 0) {
-    showToast('Please enter a valid quantity.', 'warning');
+  if (isNaN(countedQty) || countedQty < 0) {
+    showToast('Please enter a valid counted quantity.', 'warning');
     return;
   }
   if (!operatorName) {
@@ -817,34 +770,33 @@ function submitStockEntry() {
 
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
 
   const payload = {
     branchId: BRANCH_ID,
     barcodeCode: currentItem.userDefinedCode,
-    txnType: txnType,
-    entryQty: entryQty,
+    countedQty: countedQty,
     operatorName: operatorName,
     remarks: remarks
   };
 
-  apiPost({ action: 'recordStockTransaction', data: payload })
+  apiPost({ action: 'recordStockCount', data: payload })
     .then(function (result) {
-      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Submit Stock Entry';
+      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Save Stock Count';
       if (result.success) {
         playSound('beepSuccess');
-        showToast(result.txnId + ' saved — ' + result.printName + ' | new stock: ' + result.finalStock, 'success');
+        showToast(result.txnId + ' saved — ' + result.printName + ' | counted: ' + result.countedQty, 'success');
         resetScanState();
         loadRecentFeed();
         focusBarcodeInput();
       } else {
         playSound('beepError');
-        showToast(result.message || 'Failed to record entry.', 'danger');
+        showToast(result.message || 'Failed to save count.', 'danger');
         submitBtn.disabled = false;
       }
     })
     .catch(function (err) {
-      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Submit Stock Entry';
+      submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Save Stock Count';
       playSound('beepError');
       showToast('Error: ' + err.message, 'danger');
       submitBtn.disabled = false;
@@ -859,31 +811,27 @@ function loadRecentFeed() {
     .then(renderFeedTable)
     .catch(function () {
       document.getElementById('feedTableBody').innerHTML =
-        '<tr><td colspan="8" class="empty-feed">Could not load feed.</td></tr>';
+        '<tr><td colspan="7" class="empty-feed">Could not load feed.</td></tr>';
     });
 }
 
 function renderFeedTable(logs) {
   const body = document.getElementById('feedTableBody');
   if (!logs || logs.length === 0) {
-    body.innerHTML = '<tr><td colspan="8" class="empty-feed">No stock entries yet for ' + escapeHtml(BRANCH_LABEL) + '.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty-feed">No stock counts yet for ' + escapeHtml(BRANCH_LABEL) + '.</td></tr>';
     return;
   }
 
   body.innerHTML = logs.map(function (log) {
-    const badgeClass = log.txnType === 'INWARD' ? 'badge-inward'
-                      : log.txnType === 'OUTWARD' ? 'badge-outward'
-                      : 'badge-adjustment';
     return (
       '<tr>' +
         '<td class="fw-semibold">' + escapeHtml(log.txnId) + '</td>' +
-        '<td><span class="badge ' + badgeClass + '">' + escapeHtml(log.txnType) + '</span></td>' +
         '<td>' + escapeHtml(log.itemName) + '</td>' +
         '<td class="text-muted">' + escapeHtml(log.barcodeCode) + '</td>' +
-        '<td>' + escapeHtml(String(log.entryQty)) + '</td>' +
-        '<td class="fw-semibold">' + escapeHtml(String(log.finalStock)) + '</td>' +
+        '<td class="fw-semibold">' + escapeHtml(String(log.countedStock)) + '</td>' +
         '<td>' + escapeHtml(log.operatorName) + '</td>' +
         '<td class="text-muted small">' + escapeHtml(log.dateTime) + '</td>' +
+        '<td class="text-muted small">' + escapeHtml(log.remarks || '-') + '</td>' +
       '</tr>'
     );
   }).join('');
