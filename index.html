@@ -3,13 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Raghuvir Sweets And Bakers | Stock Taking</title>
+<title>Raghuvir Sweets And Bakers | Stock Scan</title>
 
-<!-- Bootstrap 5 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-<!-- FontAwesome -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-<!-- html5-qrcode: reads barcode/QR directly via device camera -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
 <style>
@@ -21,448 +18,159 @@
     --bg-soft:#faf7f5;
     --ink:#2b2320;
   }
-
   * { box-sizing: border-box; }
-
   body{
     background:var(--bg-soft);
     color:var(--ink);
     font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    padding-bottom:90px; /* room for fixed bottom bar */
   }
 
   /* ---------- HEADER ---------- */
   .app-header{
     background:linear-gradient(90deg, var(--brand-crimson) 0%, var(--brand-crimson-dark) 100%);
     color:#fff;
-    padding:.65rem 1.25rem;
-    box-shadow:0 2px 10px rgba(0,0,0,.15);
-    position:sticky;
-    top:0;
-    z-index:1030;
+    padding:.6rem 1rem;
+    display:flex;
+    align-items:center;
+    gap:.6rem;
   }
   .app-header .brand-logo{
-    height:44px;
-    width:44px;
-    object-fit:contain;
-    border-radius:8px;
-    background:#fff;
-    padding:3px;
+    height:38px; width:38px; object-fit:contain; border-radius:8px; background:#fff; padding:2px;
   }
-  .app-header .brand-name{
-    font-weight:700;
-    font-size:1.15rem;
-    letter-spacing:.3px;
-    line-height:1.1;
-  }
-  .app-header .brand-sub{
-    font-size:.72rem;
-    opacity:.85;
-    letter-spacing:.5px;
-    text-transform:uppercase;
-  }
+  .app-header .brand-name{ font-weight:700; font-size:1rem; line-height:1.1; }
   .branch-pill{
+    margin-left:auto;
     background:rgba(255,255,255,.18);
     border:1px solid rgba(255,255,255,.35);
-    font-size:.75rem;
-    font-weight:700;
-    padding:.25rem .65rem;
-    border-radius:999px;
-    letter-spacing:.4px;
+    font-size:.75rem; font-weight:700;
+    padding:.25rem .65rem; border-radius:999px;
   }
-  .live-clock{
-    font-variant-numeric:tabular-nums;
-    font-weight:600;
-    font-size:.95rem;
-  }
-  .scanner-status{
-    font-size:.8rem;
-    font-weight:600;
-    padding:.3rem .7rem;
-    border-radius:999px;
-    background:rgba(255,255,255,.15);
-  }
-  .scanner-status.ready{ color:#c8ffcf; }
-  .scanner-status.busy{ color:#ffe6a8; }
 
-  /* ---------- CONFIG BANNER ---------- */
   .config-banner{
-    background:#fff3cd;
-    border-bottom:1px solid #ffe69c;
-    color:#664d03;
-    padding:.6rem 1.25rem;
-    font-size:.85rem;
-    text-align:center;
-    display:none;
+    background:#fff3cd; border-bottom:1px solid #ffe69c; color:#664d03;
+    padding:.5rem 1rem; font-size:.8rem; text-align:center; display:none;
   }
 
-  /* ---------- LAYOUT ---------- */
-  .main-wrap{ padding:1.25rem; max-width:1400px; margin:0 auto; }
+  /* ---------- CAMERA ---------- */
+  .camera-wrap{
+    max-width:640px;
+    margin:0.75rem auto 0;
+    padding:0 .75rem;
+  }
+  .camera-box{
+    background:#000;
+    border-radius:14px;
+    overflow:hidden;
+    position:relative;
+    box-shadow:0 4px 16px rgba(165,25,42,.15);
+  }
+  #qrReader{ width:100%; }
+  #qrReader video{ border-radius:14px; display:block; }
+  .scan-banner{
+    position:absolute; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,.75);
+    color:#fff;
+    padding:.65rem .9rem;
+    font-size:.9rem;
+    font-weight:600;
+    text-align:center;
+    min-height:2.6rem;
+  }
+  .scan-banner.ok{ background:rgba(31,160,74,.9); }
+  .scan-banner.err{ background:rgba(220,53,69,.9); }
 
-  .panel-card{
+  /* ---------- SCANNED LIST ---------- */
+  .list-wrap{
+    max-width:640px;
+    margin:.9rem auto 0;
+    padding:0 .75rem;
+  }
+  .list-card{
     background:#fff;
     border-radius:14px;
     border:1px solid #eee0d8;
-    box-shadow:0 2px 12px rgba(165,25,42,.06);
+    box-shadow:0 2px 10px rgba(165,25,42,.06);
   }
-  .panel-header{
-    padding:.9rem 1.1rem;
+  .list-header{
+    padding:.7rem .9rem;
     border-bottom:1px solid #f1e5dc;
     font-weight:700;
-    font-size:.95rem;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:.5rem;
-  }
-  .panel-header i{ color:var(--brand-crimson); }
-  .panel-body{ padding:1.1rem; }
-
-  /* ---------- SCAN INPUT ---------- */
-  .scan-input-group .form-control{
-    font-size:1.15rem;
-    font-weight:600;
-    padding:.75rem 1rem;
-    border:2px solid var(--brand-orange);
-    border-radius:10px 0 0 10px;
-  }
-  .scan-input-group .form-control:focus{
-    box-shadow:0 0 0 .2rem rgba(245,135,31,.25);
-    border-color:var(--brand-crimson);
-  }
-  .scan-clear-btn{
-    border:2px solid var(--brand-orange);
-    border-left:none;
-    background:#fff;
-    border-radius:0 10px 10px 0;
-  }
-
-  /* ---------- CAMERA SCAN BUTTON ---------- */
-  .btn-camera-scan{
-    width:100%;
-    background:linear-gradient(90deg, var(--brand-orange), #d9690f);
-    border:none;
-    color:#fff;
-    font-weight:700;
-    padding:.7rem;
-    border-radius:10px;
-    margin-top:.6rem;
-  }
-  .btn-camera-scan:hover{ opacity:.92; color:#fff; }
-
-  #cameraModalBody{ background:#000; padding:0; }
-  #qrReader{ width:100%; }
-  #qrReader video{ border-radius:0 0 12px 12px; }
-
-  /* ---------- PRODUCT INFO CARD ---------- */
-  .product-card{
-    border:2px dashed #e5d5c8;
-    border-radius:12px;
-    padding:1rem;
-    margin-top:1rem;
-    min-height:190px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    background:var(--brand-orange-light);
-    transition:.15s;
-  }
-  .product-card.has-item{
-    border-style:solid;
-    border-color:var(--brand-crimson);
-    background:#fff;
-  }
-  .product-card.error-item{
-    border-style:solid;
-    border-color:#dc3545;
-    background:#fff5f5;
-  }
-  .product-card .placeholder-text{
-    text-align:center;
-    color:#a99184;
-    font-size:.95rem;
-  }
-  .pc-name{
-    font-size:1.25rem;
-    font-weight:800;
-    color:var(--brand-crimson-dark);
-    margin-bottom:.15rem;
-  }
-  .pc-subname{
-    font-size:.8rem;
-    color:#a99184;
-    margin-bottom:.35rem;
-  }
-  .pc-meta-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:.4rem;
-    margin-bottom:.6rem;
-  }
-  .pc-badge{
-    background:var(--brand-orange-light);
-    color:var(--brand-crimson-dark);
-    border:1px solid #f0d3b8;
-    font-size:.75rem;
-    font-weight:600;
-    padding:.28rem .6rem;
-    border-radius:6px;
-  }
-  .pc-stat{
-    display:flex;
-    justify-content:space-between;
-    border-bottom:1px dashed #eee;
-    padding:.3rem 0;
     font-size:.9rem;
-  }
-  .pc-stat b{ color:var(--ink); }
-  .pc-stock-highlight{
-    font-size:1.4rem;
-    font-weight:800;
-    color:var(--brand-crimson);
-  }
-  .pc-ingredients{
-    font-size:.8rem;
-    color:#7a675e;
-    margin-top:.4rem;
-  }
-
-  /* ---------- AUTO-ADD STATUS (replaces manual Add Entry button) ---------- */
-  .auto-add-status{
-    background:var(--brand-orange-light);
-    border:1px solid #f0d3b8;
-    border-radius:10px;
-    padding:.8rem 1rem;
-    font-size:.85rem;
-    color:var(--brand-crimson-dark);
-  }
-  .auto-add-status i{ margin-right:.3rem; }
-  .last-scanned-box{
-    border:2px dashed #e5d5c8;
-    border-radius:10px;
-    padding:.8rem 1rem;
-    font-size:.95rem;
-    font-weight:600;
-    min-height:52px;
     display:flex;
     align-items:center;
+    justify-content:space-between;
   }
-  .last-scanned-box.ok{
-    border-style:solid;
-    border-color:#1fa04a;
-    background:#e8f8ec;
-    color:#178a3e;
-  }
-  .last-scanned-box.err{
-    border-style:solid;
-    border-color:#dc3545;
-    background:#fdeceb;
-    color:#c22532;
-  }
-
-  /* ---------- QTY STEPPER (used inline in session table) ---------- */
-  .qty-stepper{ display:flex; align-items:stretch; }
-  .qty-stepper button{
-    width:52px;
-    font-size:1.4rem;
-    font-weight:700;
-    border:2px solid var(--brand-orange);
+  .count-badge{
     background:var(--brand-orange-light);
     color:var(--brand-crimson-dark);
-  }
-  .qty-stepper .qty-input{
-    text-align:center;
-    font-size:1.4rem;
+    border:1px solid #f0d3b8;
     font-weight:800;
-    border-top:2px solid var(--brand-orange);
-    border-bottom:2px solid var(--brand-orange);
+    font-size:.78rem;
+    padding:.2rem .6rem;
+    border-radius:999px;
   }
-
-  /* ---------- ADD ENTRY BUTTON ---------- */
-  .btn-add-entry{
-    background:linear-gradient(90deg, #1fa04a, #178a3e);
-    border:none;
-    color:#fff;
-    font-weight:700;
-    font-size:1.05rem;
-    padding:.8rem;
-    border-radius:12px;
-    letter-spacing:.3px;
-  }
-  .btn-add-entry:hover{ opacity:.92; color:#fff; }
-  .btn-add-entry:disabled{ opacity:.6; }
-
-  /* ---------- FAST CONTINUOUS SCAN MODE (split screen) ---------- */
-  .fast-scan-toggle-btn{
-    background:linear-gradient(90deg, #6f1de0, #4b0fa3);
-    border:none;
-    color:#fff;
-    font-weight:700;
-    padding:.55rem 1.1rem;
-    border-radius:10px;
-    font-size:.85rem;
-  }
-  .fast-scan-toggle-btn:hover{ opacity:.92; color:#fff; }
-  .fast-scan-toggle-btn.is-stop{
-    background:linear-gradient(90deg, #dc3545, #a4222f);
-  }
-  .fast-scan-live-badge{
-    background:#dc3545;
-    color:#fff;
+  .scan-table{ margin-bottom:0; width:100%; }
+  .scan-table thead th{
+    background:#f6ede6;
+    color:var(--brand-crimson-dark);
     font-size:.7rem;
-    font-weight:800;
-    padding:.2rem .55rem;
-    border-radius:999px;
-    letter-spacing:.5px;
-    animation: fastPulse 1.4s infinite;
-  }
-  @keyframes fastPulse{
-    0%, 100% { opacity: 1; }
-    50% { opacity: .45; }
-  }
-  .fast-scan-split{
-    display:none;
-  }
-  .fast-scan-split.active{
-    display:flex;
-    gap:1rem;
-    flex-wrap:wrap;
-  }
-  .fast-scan-camera-col{
-    flex:1 1 340px;
-    min-width:280px;
-    background:#000;
-    border-radius:12px;
-    overflow:hidden;
-    position:relative;
-  }
-  .fast-scan-camera-col #fastQrReader{ width:100%; }
-  .fast-scan-camera-col #fastQrReader video{ border-radius:12px; }
-  .fast-scan-last-banner{
-    position:absolute;
-    left:0; right:0; bottom:0;
-    background:rgba(0,0,0,.72);
-    color:#fff;
-    padding:.6rem .8rem;
-    font-size:.85rem;
-    font-weight:600;
-    text-align:center;
-    min-height:2.4rem;
-  }
-  .fast-scan-list-col{
-    flex:1 1 340px;
-    min-width:280px;
-    max-height:420px;
-    overflow-y:auto;
-    border:1px solid #eee0d8;
-    border-radius:12px;
-  }
-  .fast-scan-list-col table{ margin-bottom:0; }
-  .fast-scan-list-col thead th{
-    background:#f6ede6;
-    color:var(--brand-crimson-dark);
-    font-size:.72rem;
     text-transform:uppercase;
     letter-spacing:.4px;
     border:none;
-    position:sticky;
-    top:0;
+    padding:.5rem .7rem;
   }
-  .fast-scan-list-col tbody td{ font-size:.85rem; vertical-align:middle; }
-  .fast-scan-empty{ text-align:center; color:#a99184; padding:1.5rem; font-size:.85rem; }
-  .fast-qty-pill{
-    background:var(--brand-orange-light);
-    color:var(--brand-crimson-dark);
-    border:1px solid #f0d3b8;
-    font-weight:800;
-    padding:.15rem .55rem;
-    border-radius:999px;
-    font-size:.85rem;
+  .scan-table tbody td{
+    font-size:.87rem;
+    vertical-align:middle;
+    padding:.5rem .7rem;
   }
-
-  /* ---------- SESSION LIST TABLE ---------- */
-  .session-badge{
-    background:var(--brand-orange-light);
-    color:var(--brand-crimson-dark);
-    border:1px solid #f0d3b8;
-    font-weight:700;
-    font-size:.8rem;
-    padding:.25rem .65rem;
-    border-radius:999px;
-  }
-  .session-table thead th{
-    background:#f6ede6;
-    color:var(--brand-crimson-dark);
-    font-size:.75rem;
-    text-transform:uppercase;
-    letter-spacing:.4px;
-    border:none;
-  }
-  .session-table tbody td{ font-size:.87rem; vertical-align:middle; }
-  .btn-remove-row{
-    border:none;
-    background:none;
-    color:#dc3545;
-    font-size:1rem;
-  }
-  .inline-qty-adjust{
-    display:inline-flex;
-    align-items:center;
-    gap:.35rem;
-  }
-  .inline-qty-adjust button{
-    width:24px;
-    height:24px;
-    line-height:1;
+  .qty-adjust{ display:inline-flex; align-items:center; gap:.35rem; }
+  .qty-adjust button{
+    width:24px; height:24px; line-height:1;
     border:1px solid var(--brand-orange);
     background:var(--brand-orange-light);
     color:var(--brand-crimson-dark);
-    border-radius:6px;
-    font-size:.75rem;
+    border-radius:6px; font-size:.72rem;
   }
-  .empty-session{ text-align:center; color:#a99184; padding:1.5rem; }
+  .remove-btn{ border:none; background:none; color:#dc3545; font-size:.95rem; }
+  .empty-list{ text-align:center; color:#a99184; padding:1.6rem; font-size:.85rem; }
 
-  /* ---------- FINAL SUBMIT BUTTON ---------- */
-  .final-submit-panel{
-    background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
-    border-radius:14px;
-    padding:1.1rem;
-    color:#fff;
+  /* ---------- BOTTOM BAR (Operator + Final Submit) ---------- */
+  .bottom-bar{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    background:#fff;
+    border-top:1px solid #eee0d8;
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);
+    padding:.6rem .9rem;
+    z-index:1030;
+  }
+  .bottom-bar-inner{
+    max-width:640px;
+    margin:0 auto;
     display:flex;
+    gap:.6rem;
     align-items:center;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:1rem;
+  }
+  .bottom-bar input{
+    flex:1;
+    border:1.5px solid var(--brand-orange);
+    border-radius:8px;
+    padding:.5rem .7rem;
+    font-size:.85rem;
   }
   .btn-final-submit{
-    background:#fff;
-    color:var(--brand-crimson-dark);
+    background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
     border:none;
-    font-weight:800;
-    font-size:1.1rem;
-    padding:.85rem 2rem;
-    border-radius:12px;
-    letter-spacing:.3px;
-  }
-  .btn-final-submit:hover{ opacity:.9; color:var(--brand-crimson-dark); }
-  .btn-final-submit:disabled{ opacity:.55; }
-
-  /* ---------- LIVE FEED TABLE ---------- */
-  .feed-table thead th{
-    background:var(--brand-crimson);
     color:#fff;
-    font-size:.78rem;
-    text-transform:uppercase;
-    letter-spacing:.4px;
-    border:none;
+    font-weight:700;
+    font-size:.85rem;
+    padding:.55rem 1rem;
+    border-radius:8px;
+    white-space:nowrap;
   }
-  .feed-table tbody td{ font-size:.87rem; vertical-align:middle; }
-
-  .empty-feed{ text-align:center; color:#a99184; padding:2rem; }
-
-  @media (max-width: 991px){
-    .app-header .brand-name{ font-size:1rem; }
-    .live-clock{ display:none; }
-  }
+  .btn-final-submit:disabled{ opacity:.5; }
 </style>
 </head>
 <body>
@@ -473,234 +181,52 @@
 </div>
 
 <!-- ===================== HEADER ===================== -->
-<div class="app-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-  <div class="d-flex align-items-center gap-2">
-    <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
-    <div>
-      <div class="brand-name">Raghuvir Sweets And Bakers</div>
-      <div class="brand-sub">Month-End Stock Taking</div>
-    </div>
-    <span class="branch-pill ms-2" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
-  </div>
-  <div class="d-flex align-items-center gap-3">
-    <span class="live-clock" id="liveClock">--:--:--</span>
-    <span class="scanner-status ready" id="scannerStatus"><i class="fa-solid fa-circle" style="font-size:.55rem;"></i> Ready</span>
+<div class="app-header">
+  <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
+  <span class="brand-name">Raghuvir Stock Scan</span>
+  <span class="branch-pill" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
+</div>
+
+<!-- ===================== CAMERA (always live) ===================== -->
+<div class="camera-wrap">
+  <div class="camera-box">
+    <div id="qrReader"></div>
+    <div class="scan-banner" id="scanBanner">Starting camera...</div>
   </div>
 </div>
 
-<!-- ===================== MAIN ===================== -->
-<div class="main-wrap">
-  <div class="row g-3">
-
-    <!-- ============ LEFT: SCAN + PRODUCT CARD ============ -->
-    <div class="col-lg-6">
-      <div class="panel-card h-100">
-        <div class="panel-header"><span><i class="fa-solid fa-barcode"></i> Scan &amp; Identify Item</span></div>
-        <div class="panel-body">
-
-          <label class="form-label fw-semibold small text-muted">SCAN BARCODE / ENTER CODE</label>
-          <div class="input-group scan-input-group mb-2">
-            <input type="text" id="barcodeInput" class="form-control" placeholder="Type code and press Enter..." autocomplete="off" autofocus>
-            <button class="btn scan-clear-btn" id="clearBarcodeBtn" type="button" title="Clear">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-
-          <button class="btn btn-camera-scan" id="openCameraBtn" type="button">
-            <i class="fa-solid fa-camera"></i> Scan Barcode with Camera
-          </button>
-
-          <div class="mt-2">
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#manualSearchWrap">
-              <i class="fa-solid fa-magnifying-glass"></i> Can't scan? Search manually
-            </button>
-          </div>
-          <div class="collapse" id="manualSearchWrap">
-            <select class="form-select mt-2" id="manualSearchSelect">
-              <option value="">-- Loading item list... --</option>
-            </select>
-          </div>
-
-          <div class="product-card" id="productCard">
-            <div class="placeholder-text">
-              <i class="fa-solid fa-box-open fa-2x mb-2"></i><br>
-              Scan a barcode to view item details
-            </div>
-          </div>
-
-        </div>
-      </div>
+<!-- ===================== SCANNED ITEMS LIST ===================== -->
+<div class="list-wrap">
+  <div class="list-card">
+    <div class="list-header">
+      <span><i class="fa-solid fa-list-ol"></i> Scanned Items</span>
+      <span class="count-badge" id="countBadge">0 items</span>
     </div>
-
-    <!-- ============ RIGHT: OPERATOR + AUTO-ADD STATUS ============ -->
-    <div class="col-lg-6">
-      <div class="panel-card h-100">
-        <div class="panel-header"><span><i class="fa-solid fa-clipboard-check"></i> Scan-to-Add (Automatic)</span></div>
-        <div class="panel-body">
-
-          <label class="form-label fw-semibold small text-muted">OPERATOR / SUPERVISOR NAME</label>
-          <input type="text" id="operatorNameInput" class="form-control mb-3" placeholder="Enter your name first...">
-
-          <div class="auto-add-status" id="autoAddStatus">
-            <i class="fa-solid fa-circle-info"></i>
-            Fill in your name above, then just scan — every barcode is added to the list automatically (qty 1). Scan the same item again to bump its quantity. No button to press.
-          </div>
-
-          <div class="mt-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="small text-muted fw-semibold">LAST SCANNED</span>
-            </div>
-            <div class="last-scanned-box" id="lastScannedBox">
-              <span class="text-muted">Nothing scanned yet</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ FAST CONTINUOUS SCAN MODE (split screen) ============ -->
-    <div class="col-12">
-      <div class="panel-card">
-        <div class="panel-header">
-          <span><i class="fa-solid fa-bolt"></i> Fast Continuous Scan Mode
-            <span class="fast-scan-live-badge ms-1" id="fastScanLiveBadge" style="display:none;">LIVE</span>
-          </span>
-          <button class="btn fast-scan-toggle-btn" id="fastScanToggleBtn" type="button">
-            <i class="fa-solid fa-bolt"></i> Start Fast Scan
-          </button>
-        </div>
-        <div class="panel-body">
-          <div class="form-text mb-2" id="fastScanHint">
-            Keep scanning barcodes one after another without stopping — each scan auto-adds the item to the list on the right (scanning the same item again just increases its quantity). Fill in Operator Name above before starting.
-          </div>
-          <div class="fast-scan-split" id="fastScanSplit">
-            <!-- LEFT: live camera -->
-            <div class="fast-scan-camera-col">
-              <div id="fastQrReader"></div>
-              <div class="fast-scan-last-banner" id="fastScanLastBanner">Point camera at a barcode to begin...</div>
-            </div>
-            <!-- RIGHT: live scanned entries with weight -->
-            <div class="fast-scan-list-col">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Weight</th>
-                    <th>Qty</th>
-                  </tr>
-                </thead>
-                <tbody id="fastScanListBody">
-                  <tr><td colspan="3" class="fast-scan-empty">Scanned items will appear here live...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ SESSION LIST (entries added, not yet saved) ============ -->
-    <div class="col-12">
-      <div class="panel-card">
-        <div class="panel-header">
-          <span><i class="fa-solid fa-list-ol"></i> Entries To Submit</span>
-          <span class="session-badge" id="sessionCountBadge">0 items</span>
-        </div>
-        <div class="panel-body p-0">
-          <div class="table-responsive">
-            <table class="table session-table mb-0">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Item</th>
-                  <th>Code</th>
-                  <th>Counted Qty</th>
-                  <th>Operator</th>
-                  <th>Remarks</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="sessionTableBody">
-                <tr><td colspan="7" class="empty-session">No entries yet — enter your name above and start scanning; items appear here automatically.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ FINAL SUBMIT ============ -->
-    <div class="col-12">
-      <div class="final-submit-panel">
-        <div>
-          <div class="fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Ready to save this stock take?</div>
-          <div style="font-size:.85rem; opacity:.9;">This writes all entries above into <strong id="finalBranchLabel">--</strong>'s stock sheet in one go.</div>
-        </div>
-        <button class="btn btn-final-submit" id="finalSubmitBtn" type="button" disabled>
-          <i class="fa-solid fa-check-double"></i> Final Submit All Entries
-        </button>
-      </div>
-    </div>
-
-    <!-- ============ BOTTOM: LIVE FEED ============ -->
-    <div class="col-12">
-      <div class="panel-card">
-        <div class="panel-header">
-          <span><i class="fa-solid fa-list-check"></i> Recently Saved Counts <small class="text-muted fw-normal" id="feedSubtitle">(last 10 entries)</small></span>
-          <button class="btn btn-sm btn-outline-secondary" id="refreshFeedBtn" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button>
-        </div>
-        <div class="panel-body p-0">
-          <div class="table-responsive">
-            <table class="table feed-table mb-0">
-              <thead>
-                <tr>
-                  <th>Txn ID</th>
-                  <th>Item</th>
-                  <th>Code</th>
-                  <th>Counted Qty</th>
-                  <th>Operator</th>
-                  <th>Time</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody id="feedTableBody">
-                <tr><td colspan="7" class="empty-feed">Loading recent entries...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ===================== CAMERA SCAN MODAL ===================== -->
-<div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h6 class="modal-title"><i class="fa-solid fa-camera"></i> Point camera at the barcode</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" id="closeCameraBtn"></button>
-      </div>
-      <div class="modal-body" id="cameraModalBody">
-        <div id="qrReader"></div>
-      </div>
-      <div class="modal-footer">
-        <small class="text-muted">Hold steady — it captures automatically once readable.</small>
-      </div>
+    <div class="table-responsive">
+      <table class="table scan-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Weight</th>
+            <th>Qty</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="scanTableBody">
+          <tr><td colspan="4" class="empty-list">Point the camera at a barcode to start scanning...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- ===================== TOAST CONTAINER ===================== -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1080;">
-  <div id="appToast" class="toast align-items-center border-0" role="alert">
-    <div class="d-flex">
-      <div class="toast-body" id="appToastBody">Message</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-    </div>
+<!-- ===================== BOTTOM BAR: Operator + Final Submit ===================== -->
+<div class="bottom-bar">
+  <div class="bottom-bar-inner">
+    <input type="text" id="operatorNameInput" placeholder="Operator name...">
+    <button class="btn-final-submit" id="finalSubmitBtn" type="button" disabled>
+      <i class="fa-solid fa-check-double"></i> Submit
+    </button>
   </div>
 </div>
 
@@ -712,7 +238,6 @@
   <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
 </audio>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script>
 /* ============================================================================
    ⚠️ REQUIRED CONFIG — paste your deployed Apps Script Web App URL here.
@@ -720,7 +245,7 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec'; // e.g. https://script.google.com/macros/s/AKfycb.../exec
 
 /* ============================================================================
-   BRANCH CONTEXT — read from the page URL, e.g.:
+   BRANCH CONTEXT — from the page URL:
      index.html?branch=BR1   -> Branch 1
      index.html?branch=BR2   -> Branch 2
 ============================================================================ */
@@ -735,19 +260,12 @@ const BRANCH_LABEL = BRANCH_LABELS[BRANCH_ID];
 /* ============================================================================
    STATE
 ============================================================================ */
-let currentItem = null;
-let lookupInFlight = false;
+let scannedItems = [];        // { barcodeCode, itemName, netWeight, dept, countedQty }
 let html5QrCode = null;
-let cameraScanActive = false;
-let sessionEntries = []; // items added but not yet finally submitted
-
-// --- Fast Continuous Scan Mode state ---
-let fastHtml5QrCode = null;
-let fastScanRunning = false;
-let fastScanLookupBusy = false;
-let fastScanLastCode = '';
-let fastScanLastTime = 0;
-const FAST_SCAN_COOLDOWN_MS = 1200; // prevents the same frame re-triggering the same barcode
+let lookupBusy = false;
+let lastCode = '';
+let lastCodeTime = 0;
+const SCAN_COOLDOWN_MS = 1200;
 
 /* ============================================================================
    INIT
@@ -757,181 +275,15 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('configBanner').style.display = 'block';
   }
   document.getElementById('branchPill').innerHTML = '<i class="fa-solid fa-store"></i> ' + BRANCH_LABEL;
-  document.getElementById('feedSubtitle').textContent = '(' + BRANCH_LABEL + ' — last 10 entries)';
-  document.getElementById('finalBranchLabel').textContent = BRANCH_LABEL;
-
-  startLiveClock();
-  focusBarcodeInput();
-  loadRecentFeed();
-  loadManualSearchList();
-  renderSessionTable();
-  wireEvents();
+  document.getElementById('finalSubmitBtn').addEventListener('click', finalSubmit);
+  startCamera();
 });
 
-function wireEvents() {
-  const barcodeInput = document.getElementById('barcodeInput');
-
-  barcodeInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const val = barcodeInput.value.trim();
-      if (val.length > 0) handleBarcodeLookup(val);
-    }
-  });
-
-  document.getElementById('clearBarcodeBtn').addEventListener('click', function () {
-    resetScanState();
-    focusBarcodeInput();
-  });
-
-  document.getElementById('openCameraBtn').addEventListener('click', openCameraScanner);
-  document.getElementById('closeCameraBtn').addEventListener('click', stopCameraScanner);
-  document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCameraScanner);
-
-  document.getElementById('manualSearchSelect').addEventListener('change', function () {
-    const code = this.value;
-    if (code) {
-      document.getElementById('barcodeInput').value = code;
-      handleBarcodeLookup(code);
-      const collapseEl = document.getElementById('manualSearchWrap');
-      bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
-    }
-  });
-
-  document.getElementById('finalSubmitBtn').addEventListener('click', finalSubmitAllEntries);
-  document.getElementById('refreshFeedBtn').addEventListener('click', loadRecentFeed);
-  document.getElementById('fastScanToggleBtn').addEventListener('click', toggleFastScan);
-}
-
 /* ============================================================================
-   LIVE CLOCK
+   CAMERA — starts automatically, stays live, scans continuously
 ============================================================================ */
-function startLiveClock() {
-  function tick() {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
-    document.getElementById('liveClock').textContent = h + ':' + m + ':' + s;
-  }
-  tick();
-  setInterval(tick, 1000);
-}
-
-function focusBarcodeInput() {
-  const el = document.getElementById('barcodeInput');
-  if (el && !cameraScanActive) el.focus();
-}
-
-/* ============================================================================
-   SCANNER STATUS INDICATOR
-============================================================================ */
-function setScannerStatus(state) {
-  const el = document.getElementById('scannerStatus');
-  if (state === 'busy') {
-    el.className = 'scanner-status busy';
-    el.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size:.7rem;"></i> Looking up...';
-  } else {
-    el.className = 'scanner-status ready';
-    el.innerHTML = '<i class="fa-solid fa-circle" style="font-size:.55rem;"></i> Ready';
-  }
-}
-
-/* ============================================================================
-   CAMERA BARCODE SCANNING (html5-qrcode)
-============================================================================ */
-function openCameraScanner() {
-  // Only one camera should be active at a time.
-  if (fastScanRunning) stopFastScan();
-
-  const modalEl = document.getElementById('cameraModal');
-  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-  modal.show();
-
+function startCamera() {
   html5QrCode = new Html5Qrcode('qrReader');
-  cameraScanActive = true;
-
-  const config = {
-    fps: 10,
-    qrbox: { width: 260, height: 160 },
-    formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.QR_CODE
-    ]
-  };
-
-  html5QrCode.start(
-    { facingMode: 'environment' },
-    config,
-    function onScanSuccess(decodedText) {
-      if (lookupInFlight) return;
-      document.getElementById('barcodeInput').value = decodedText;
-      stopCameraScanner();
-      modal.hide();
-      handleBarcodeLookup(decodedText);
-    },
-    function onScanFailure() { /* silent — called continuously while scanning */ }
-  ).catch(function (err) {
-    showToast('Could not start camera: ' + err, 'danger');
-    modal.hide();
-  });
-}
-
-function stopCameraScanner() {
-  if (html5QrCode && cameraScanActive) {
-    html5QrCode.stop().then(function () {
-      html5QrCode.clear();
-      cameraScanActive = false;
-      focusBarcodeInput();
-    }).catch(function () {
-      cameraScanActive = false;
-    });
-  }
-}
-
-/* ============================================================================
-   FAST CONTINUOUS SCAN MODE (split screen: camera left, live list right)
-   Camera stays open and keeps decoding barcode after barcode — no manual
-   "Add Entry" click needed. Each successful scan:
-     - if the item is already in the session list -> quantity +1
-     - if it's new -> added with quantity 1
-   This is built for rapid physical counting: just keep scanning one unit
-   at a time.
-============================================================================ */
-function toggleFastScan() {
-  if (fastScanRunning) {
-    stopFastScan();
-  } else {
-    startFastScan();
-  }
-}
-
-function startFastScan() {
-  const operatorName = document.getElementById('operatorNameInput').value.trim();
-  if (!operatorName) {
-    showToast('Please enter Operator / Supervisor name before starting Fast Scan.', 'warning');
-    document.getElementById('operatorNameInput').focus();
-    return;
-  }
-
-  // Make sure the single-shot camera modal isn't also running.
-  stopCameraScanner();
-
-  document.getElementById('fastScanSplit').classList.add('active');
-  document.getElementById('fastScanLiveBadge').style.display = 'inline-block';
-  document.getElementById('fastScanHint').style.display = 'none';
-
-  const toggleBtn = document.getElementById('fastScanToggleBtn');
-  toggleBtn.classList.add('is-stop');
-  toggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Fast Scan';
-
-  fastHtml5QrCode = new Html5Qrcode('fastQrReader');
-  fastScanRunning = true;
 
   const config = {
     fps: 12,
@@ -947,96 +299,166 @@ function startFastScan() {
     ]
   };
 
-  fastHtml5QrCode.start(
+  html5QrCode.start(
     { facingMode: 'environment' },
     config,
-    onFastScanDecoded,
-    function onFastScanFailure() { /* silent — fires continuously while no barcode is in frame */ }
-  ).catch(function (err) {
-    showToast('Could not start camera: ' + err, 'danger');
-    stopFastScan();
+    onDecoded,
+    function onFail() { /* silent — fires continuously while nothing is in frame */ }
+  ).then(function () {
+    setBanner('Point camera at a barcode...', '');
+  }).catch(function (err) {
+    setBanner('Camera error: ' + err, 'err');
   });
 }
 
-function stopFastScan() {
-  const toggleBtn = document.getElementById('fastScanToggleBtn');
-  toggleBtn.classList.remove('is-stop');
-  toggleBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Start Fast Scan';
-
-  document.getElementById('fastScanSplit').classList.remove('active');
-  document.getElementById('fastScanLiveBadge').style.display = 'none';
-  document.getElementById('fastScanHint').style.display = 'block';
-
-  fastScanRunning = false;
-
-  if (fastHtml5QrCode) {
-    fastHtml5QrCode.stop().then(function () {
-      fastHtml5QrCode.clear();
-      fastHtml5QrCode = null;
-    }).catch(function () {
-      fastHtml5QrCode = null;
-    });
-  }
-}
-
-function onFastScanDecoded(decodedText) {
+function onDecoded(decodedText) {
   const now = Date.now();
-  // Debounce: ignore the same code repeating within the cooldown window
-  // (the camera keeps "seeing" the same barcode across many frames).
-  if (decodedText === fastScanLastCode && (now - fastScanLastTime) < FAST_SCAN_COOLDOWN_MS) {
-    return;
-  }
-  if (fastScanLookupBusy) return;
+  if (decodedText === lastCode && (now - lastCodeTime) < SCAN_COOLDOWN_MS) return;
+  if (lookupBusy) return;
 
-  fastScanLastCode = decodedText;
-  fastScanLastTime = now;
-  fastScanLookupBusy = true;
-
-  const banner = document.getElementById('fastScanLastBanner');
-  banner.textContent = 'Looking up ' + decodedText + '...';
+  lastCode = decodedText;
+  lastCodeTime = now;
+  lookupBusy = true;
+  setBanner('Looking up ' + decodedText + '...', '');
 
   apiGet({ action: 'getItemByBarcode', code: decodedText, branch: BRANCH_ID })
     .then(function (result) {
-      fastScanLookupBusy = false;
+      lookupBusy = false;
 
       if (!result.found) {
         playSound('beepError');
-        banner.textContent = '❌ Not found: ' + decodedText;
+        setBanner('❌ Not found: ' + decodedText, 'err');
         return;
       }
 
       const item = result.item;
-      const operatorName = document.getElementById('operatorNameInput').value.trim() || 'Unknown';
       const displayName = item.printName || item.productName;
 
-      addOrIncrementEntry(item, operatorName);
-      banner.textContent = '✅ ' + displayName + (item.netWeight ? ' (' + item.netWeight + ')' : '');
+      const existing = scannedItems.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
+      if (existing) {
+        existing.countedQty += 1;
+      } else {
+        scannedItems.push({
+          barcodeCode: item.userDefinedCode,
+          itemName: displayName,
+          netWeight: item.netWeight,
+          dept: item.dept,
+          countedQty: 1
+        });
+      }
+
+      playSound('beepSuccess');
+      setBanner('✅ ' + displayName + (item.netWeight ? ' (' + item.netWeight + ')' : ''), 'ok');
+      renderList();
     })
     .catch(function (err) {
-      fastScanLookupBusy = false;
+      lookupBusy = false;
       playSound('beepError');
-      banner.textContent = 'Lookup error — check connection.';
+      setBanner('Lookup error — check connection.', 'err');
     });
 }
 
-function renderFastScanList() {
-  const body = document.getElementById('fastScanListBody');
-  if (sessionEntries.length === 0) {
-    body.innerHTML = '<tr><td colspan="3" class="fast-scan-empty">Scanned items will appear here live...</td></tr>';
+function setBanner(text, cls) {
+  const el = document.getElementById('scanBanner');
+  el.textContent = text;
+  el.className = 'scan-banner' + (cls ? ' ' + cls : '');
+}
+
+/* ============================================================================
+   SCANNED ITEMS LIST
+============================================================================ */
+function renderList() {
+  const body = document.getElementById('scanTableBody');
+  const badge = document.getElementById('countBadge');
+  const submitBtn = document.getElementById('finalSubmitBtn');
+
+  badge.textContent = scannedItems.length + ' item' + (scannedItems.length === 1 ? '' : 's');
+  submitBtn.disabled = scannedItems.length === 0;
+
+  if (scannedItems.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" class="empty-list">Point the camera at a barcode to start scanning...</td></tr>';
     return;
   }
 
-  // Most recently updated/added item shown at the top for fast feedback.
-  const reversed = sessionEntries.slice().reverse();
+  const reversed = scannedItems.slice().reverse();
+  const originalIndexOf = function (entry) { return scannedItems.indexOf(entry); };
+
   body.innerHTML = reversed.map(function (entry) {
+    const idx = originalIndexOf(entry);
     return (
       '<tr>' +
         '<td>' + escapeHtml(entry.itemName) + '</td>' +
         '<td class="text-muted">' + escapeHtml(entry.netWeight || '-') + '</td>' +
-        '<td><span class="fast-qty-pill">' + escapeHtml(String(entry.countedQty)) + '</span></td>' +
+        '<td>' +
+          '<span class="qty-adjust">' +
+            '<button type="button" onclick="adjustQty(' + idx + ', -1)"><i class="fa-solid fa-minus"></i></button>' +
+            '<span class="fw-semibold">' + escapeHtml(String(entry.countedQty)) + '</span>' +
+            '<button type="button" onclick="adjustQty(' + idx + ', 1)"><i class="fa-solid fa-plus"></i></button>' +
+          '</span>' +
+        '</td>' +
+        '<td><button class="remove-btn" onclick="removeItem(' + idx + ')" title="Remove"><i class="fa-solid fa-trash"></i></button></td>' +
       '</tr>'
     );
   }).join('');
+}
+
+function adjustQty(index, delta) {
+  const entry = scannedItems[index];
+  if (!entry) return;
+  entry.countedQty = Math.max(0, entry.countedQty + delta);
+  renderList();
+}
+
+function removeItem(index) {
+  scannedItems.splice(index, 1);
+  renderList();
+}
+
+/* ============================================================================
+   FINAL SUBMIT
+============================================================================ */
+function finalSubmit() {
+  const operatorName = document.getElementById('operatorNameInput').value.trim();
+  if (!operatorName) {
+    setBanner('Enter operator name before submitting.', 'err');
+    document.getElementById('operatorNameInput').focus();
+    return;
+  }
+  if (scannedItems.length === 0) return;
+
+  const btn = document.getElementById('finalSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  const entries = scannedItems.map(function (e) {
+    return {
+      barcodeCode: e.barcodeCode,
+      countedQty: e.countedQty,
+      operatorName: operatorName,
+      remarks: ''
+    };
+  });
+
+  apiPost({ action: 'recordStockCountBatch', data: { branchId: BRANCH_ID, entries: entries } })
+    .then(function (result) {
+      btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Submit';
+      if (result.success) {
+        playSound('beepSuccess');
+        setBanner('✅ Saved ' + result.savedCount + ' items to ' + BRANCH_LABEL, 'ok');
+        scannedItems = [];
+        renderList();
+      } else {
+        playSound('beepError');
+        setBanner(result.message || 'Submit failed.', 'err');
+        btn.disabled = false;
+      }
+    })
+    .catch(function (err) {
+      btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Submit';
+      playSound('beepError');
+      setBanner('Error: ' + err.message, 'err');
+      btn.disabled = false;
+    });
 }
 
 /* ============================================================================
@@ -1044,23 +466,20 @@ function renderFastScanList() {
 ============================================================================ */
 function apiGet(params) {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
-    return Promise.reject(new Error('APPS_SCRIPT_URL is not set at the top of the script.'));
+    return Promise.reject(new Error('APPS_SCRIPT_URL is not set.'));
   }
   const query = new URLSearchParams(params).toString();
   return fetch(APPS_SCRIPT_URL + '?' + query, { method: 'GET' })
     .then(function (res) { return res.text(); })
     .then(function (text) {
-      try {
-        return JSON.parse(text);
-      } catch (parseErr) {
-        throw new Error('API did not return valid data. Check the Apps Script deployment access is set to "Anyone" and the URL is correct.');
-      }
+      try { return JSON.parse(text); }
+      catch (e) { throw new Error('Invalid API response — check deployment access is "Anyone".'); }
     });
 }
 
 function apiPost(bodyObj) {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
-    return Promise.reject(new Error('APPS_SCRIPT_URL is not set at the top of the script.'));
+    return Promise.reject(new Error('APPS_SCRIPT_URL is not set.'));
   }
   return fetch(APPS_SCRIPT_URL, {
     method: 'POST',
@@ -1069,244 +488,8 @@ function apiPost(bodyObj) {
   })
     .then(function (res) { return res.text(); })
     .then(function (text) {
-      try {
-        return JSON.parse(text);
-      } catch (parseErr) {
-        throw new Error('API did not return valid data. Check the Apps Script deployment access is set to "Anyone" and the URL is correct.');
-      }
-    });
-}
-
-/* ============================================================================
-   BARCODE LOOKUP FLOW
-============================================================================ */
-function handleBarcodeLookup(code) {
-  if (lookupInFlight) return;
-
-  const operatorName = document.getElementById('operatorNameInput').value.trim();
-  if (!operatorName) {
-    showToast('Please enter Operator / Supervisor name first.', 'warning');
-    document.getElementById('operatorNameInput').focus();
-    document.getElementById('barcodeInput').value = '';
-    return;
-  }
-
-  lookupInFlight = true;
-  setScannerStatus('busy');
-
-  apiGet({ action: 'getItemByBarcode', code: code, branch: BRANCH_ID })
-    .then(function (result) {
-      lookupInFlight = false;
-      setScannerStatus('ready');
-
-      if (result.found) {
-        addOrIncrementEntry(result.item, operatorName);
-      } else {
-        playSound('beepError');
-        showLastScanned('❌ Not found: ' + code, 'err');
-        showToast(result.message || 'Barcode not found.', 'danger');
-      }
-
-      document.getElementById('barcodeInput').value = '';
-      focusBarcodeInput();
-    })
-    .catch(function (err) {
-      lookupInFlight = false;
-      setScannerStatus('ready');
-      playSound('beepError');
-      showToast('Lookup error: ' + err.message, 'danger');
-      document.getElementById('barcodeInput').value = '';
-      focusBarcodeInput();
-    });
-}
-
-/**
- * Shared "auto-add" logic used by typed/manual scans, the single-shot
- * camera modal, AND Fast Continuous Scan mode — one barcode lookup always
- * results in the item being added (or its quantity bumped) with zero
- * button clicks required.
- */
-function addOrIncrementEntry(item, operatorName) {
-  const displayName = item.printName || item.productName;
-
-  const existing = sessionEntries.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
-  if (existing) {
-    existing.countedQty += 1;
-  } else {
-    sessionEntries.push({
-      barcodeCode: item.userDefinedCode,
-      itemName: displayName,
-      dept: item.dept,
-      netWeight: item.netWeight,
-      countedQty: 1,
-      operatorName: operatorName,
-      remarks: ''
-    });
-  }
-
-  playSound('beepSuccess');
-  showLastScanned('✅ ' + displayName + (item.netWeight ? ' (' + item.netWeight + ')' : '') +
-    ' — qty ' + (existing ? existing.countedQty : 1), 'ok');
-
-  renderSessionTable();
-  renderFastScanList();
-}
-
-function showLastScanned(text, cls) {
-  const box = document.getElementById('lastScannedBox');
-  if (!box) return;
-  box.className = 'last-scanned-box ' + (cls === 'ok' ? 'ok' : cls === 'err' ? 'err' : '');
-  box.innerHTML = '<span>' + escapeHtml(text) + '</span>';
-}
-
-/* ============================================================================
-   INLINE QTY ADJUST (in the session table) — since scanning auto-adds items
-   with qty 1, this lets the operator fine-tune a count without re-scanning.
-============================================================================ */
-function adjustSessionQty(index, delta) {
-  const entry = sessionEntries[index];
-  if (!entry) return;
-  entry.countedQty = Math.max(0, entry.countedQty + delta);
-  renderSessionTable();
-  renderFastScanList();
-}
-
-function removeSessionEntry(index) {
-  sessionEntries.splice(index, 1);
-  renderSessionTable();
-  renderFastScanList();
-}
-
-function renderSessionTable() {
-  const body = document.getElementById('sessionTableBody');
-  const badge = document.getElementById('sessionCountBadge');
-  const finalBtn = document.getElementById('finalSubmitBtn');
-
-  badge.textContent = sessionEntries.length + ' item' + (sessionEntries.length === 1 ? '' : 's');
-  finalBtn.disabled = sessionEntries.length === 0;
-
-  if (sessionEntries.length === 0) {
-    body.innerHTML = '<tr><td colspan="7" class="empty-session">No entries added yet — scan an item and click "Add Entry".</td></tr>';
-    return;
-  }
-
-  body.innerHTML = sessionEntries.map(function (entry, idx) {
-    return (
-      '<tr>' +
-        '<td>' + (idx + 1) + '</td>' +
-        '<td>' + escapeHtml(entry.itemName) + '</td>' +
-        '<td class="text-muted">' + escapeHtml(entry.barcodeCode) + '</td>' +
-        '<td>' +
-          '<span class="inline-qty-adjust">' +
-            '<button type="button" onclick="adjustSessionQty(' + idx + ', -1)"><i class="fa-solid fa-minus"></i></button>' +
-            '<span class="fw-semibold">' + escapeHtml(String(entry.countedQty)) + '</span>' +
-            '<button type="button" onclick="adjustSessionQty(' + idx + ', 1)"><i class="fa-solid fa-plus"></i></button>' +
-          '</span>' +
-        '</td>' +
-        '<td>' + escapeHtml(entry.operatorName) + '</td>' +
-        '<td class="text-muted small">' + escapeHtml(entry.remarks || '-') + '</td>' +
-        '<td><button class="btn-remove-row" onclick="removeSessionEntry(' + idx + ')" title="Remove"><i class="fa-solid fa-trash"></i></button></td>' +
-      '</tr>'
-    );
-  }).join('');
-}
-
-/* ============================================================================
-   FINAL SUBMIT — batch save the whole session list
-============================================================================ */
-function finalSubmitAllEntries() {
-  if (sessionEntries.length === 0) {
-    showToast('No entries to submit yet.', 'warning');
-    return;
-  }
-
-  const finalBtn = document.getElementById('finalSubmitBtn');
-  finalBtn.disabled = true;
-  finalBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
-
-  apiPost({
-    action: 'recordStockCountBatch',
-    data: { branchId: BRANCH_ID, entries: sessionEntries }
-  })
-    .then(function (result) {
-      finalBtn.innerHTML = '<i class="fa-solid fa-check-double"></i> Final Submit All Entries';
-      if (result.success) {
-        playSound('beepSuccess');
-        showToast(result.savedCount + ' entries saved to ' + BRANCH_LABEL + '.', 'success');
-        sessionEntries = [];
-        renderSessionTable();
-        renderFastScanList();
-        loadRecentFeed();
-        focusBarcodeInput();
-        if (result.failed && result.failed.length > 0) {
-          showToast(result.failed.length + ' entries could not be saved — check barcodes.', 'warning');
-        }
-      } else {
-        playSound('beepError');
-        showToast(result.message || 'Submission failed.', 'danger');
-        finalBtn.disabled = false;
-      }
-    })
-    .catch(function (err) {
-      finalBtn.innerHTML = '<i class="fa-solid fa-check-double"></i> Final Submit All Entries';
-      playSound('beepError');
-      showToast('Error: ' + err.message, 'danger');
-      finalBtn.disabled = false;
-    });
-}
-
-/* ============================================================================
-   LIVE FEED (recently saved, from the sheet)
-============================================================================ */
-function loadRecentFeed() {
-  apiGet({ action: 'getRecentLogs', branch: BRANCH_ID })
-    .then(renderFeedTable)
-    .catch(function () {
-      document.getElementById('feedTableBody').innerHTML =
-        '<tr><td colspan="7" class="empty-feed">Could not load feed.</td></tr>';
-    });
-}
-
-function renderFeedTable(logs) {
-  const body = document.getElementById('feedTableBody');
-  if (!logs || logs.length === 0) {
-    body.innerHTML = '<tr><td colspan="7" class="empty-feed">No stock counts saved yet for ' + escapeHtml(BRANCH_LABEL) + '.</td></tr>';
-    return;
-  }
-
-  body.innerHTML = logs.map(function (log) {
-    return (
-      '<tr>' +
-        '<td class="fw-semibold">' + escapeHtml(log.txnId) + '</td>' +
-        '<td>' + escapeHtml(log.itemName) + '</td>' +
-        '<td class="text-muted">' + escapeHtml(log.barcodeCode) + '</td>' +
-        '<td class="fw-semibold">' + escapeHtml(String(log.countedStock)) + '</td>' +
-        '<td>' + escapeHtml(log.operatorName) + '</td>' +
-        '<td class="text-muted small">' + escapeHtml(log.dateTime) + '</td>' +
-        '<td class="text-muted small">' + escapeHtml(log.remarks || '-') + '</td>' +
-      '</tr>'
-    );
-  }).join('');
-}
-
-/* ============================================================================
-   MANUAL SEARCH FALLBACK
-============================================================================ */
-function loadManualSearchList() {
-  apiGet({ action: 'getItemList' })
-    .then(function (items) {
-      const select = document.getElementById('manualSearchSelect');
-      if (!items || items.length === 0) {
-        select.innerHTML = '<option value="">-- No items found --</option>';
-        return;
-      }
-      select.innerHTML = '<option value="">-- Select an item --</option>' +
-        items.map(function (it) {
-          return '<option value="' + escapeHtml(it.code) + '">' + escapeHtml(it.printName) + ' (' + escapeHtml(it.code) + ')</option>';
-        }).join('');
-    })
-    .catch(function () {
-      document.getElementById('manualSearchSelect').innerHTML = '<option value="">-- Failed to load --</option>';
+      try { return JSON.parse(text); }
+      catch (e) { throw new Error('Invalid API response — check deployment access is "Anyone".'); }
     });
 }
 
@@ -1317,17 +500,8 @@ function playSound(id) {
   const audio = document.getElementById(id);
   if (audio) {
     audio.currentTime = 0;
-    audio.play().catch(function () { /* autoplay may be blocked until first user gesture */ });
+    audio.play().catch(function () {});
   }
-}
-
-function showToast(message, type) {
-  const toastEl = document.getElementById('appToast');
-  const toastBody = document.getElementById('appToastBody');
-  toastEl.className = 'toast align-items-center text-white border-0 bg-' + (type || 'primary');
-  toastBody.textContent = message;
-  const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3200 });
-  toast.show();
 }
 
 function escapeHtml(str) {
@@ -1338,12 +512,6 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-function formatCurrency(val) {
-  const num = Number(val);
-  if (isNaN(num)) return '-';
-  return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 </script>
 </body>
