@@ -1,566 +1,650 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Raghuvir Sweets And Bakers | Stock Scan</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Raghuvir Sweets — Dispatch Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght=600&family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F3EDE2;
+      --surface:#FFFFFF;
+      --text:#261E16;
+      --text-soft:#706254;
+      --border:#DFD2BF;
+      --terracotta:#A63C19;
+      --terracotta-soft:#F5DFD6;
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
+    .wrap{ max-width:1050px; margin:0 auto; padding:20px 16px 40px; }
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    header{ text-align:center; margin-bottom:18px; }
+    header h1{ font-family:'Fraunces',serif; font-size:26px; font-weight:600; margin:0; color:var(--text); }
+    header p{ margin:3px 0 0; font-size:13px; color:var(--text-soft); font-weight: 500; }
 
-<style>
-  :root{
-    --brand-crimson:#a5192a;
-    --brand-crimson-dark:#7d1220;
-    --brand-orange:#f5871f;
-    --brand-orange-light:#fff3e6;
-    --bg-soft:#faf7f5;
-    --ink:#2b2320;
-  }
-  * { box-sizing: border-box; }
-  body{
-    background:var(--bg-soft);
-    color:var(--ink);
-    font-family:'Segoe UI', Roboto, Arial, sans-serif;
-    padding-bottom:90px; /* room for fixed bottom bar */
-  }
+    .branch-btn-row{ display:flex; gap:8px; margin-bottom: 14px; background:var(--surface); padding:12px; border-radius:var(--radius); border:1px solid var(--border); }
+    .branch-select-btn{
+      flex:1; padding:11px 4px; border-radius:10px; font-size:13px; font-weight:700;
+      font-family:inherit; cursor:pointer; border:2px solid var(--terracotta);
+      background:#fff; color:var(--terracotta); transition: all 0.15s; text-align:center;
+    }
+    .branch-select-btn.active{ background:var(--terracotta); color:#fff; }
+    .branch-select-btn:active{ transform: scale(0.96); }
 
-  /* ---------- HEADER ---------- */
-  .app-header{
-    background:linear-gradient(90deg, var(--brand-crimson) 0%, var(--brand-crimson-dark) 100%);
-    color:#fff;
-    padding:.6rem 1rem;
-    display:flex;
-    align-items:center;
-    gap:.6rem;
-  }
-  .app-header .brand-logo{
-    height:38px; width:38px; object-fit:contain; border-radius:8px; background:#fff; padding:2px;
-  }
-  .app-header .brand-name{ font-weight:700; font-size:1rem; line-height:1.1; }
-  .branch-pill{
-    margin-left:auto;
-    background:rgba(255,255,255,.18);
-    border:1px solid rgba(255,255,255,.35);
-    font-size:.75rem; font-weight:700;
-    padding:.25rem .65rem; border-radius:999px;
-  }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 18px; }
+    @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
 
-  .config-banner{
-    background:#fff3cd; border-bottom:1px solid #ffe69c; color:#664d03;
-    padding:.5rem 1rem; font-size:.8rem; text-align:center; display:none;
-  }
+    .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.04); display:flex; flex-direction:column; }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; font-family:'Fraunces',serif; font-size:18px; font-weight:600; border-bottom:1px solid var(--border); background:var(--terracotta-soft); color:var(--terracotta); }
+    .panel-body { padding:18px; display:flex; flex-direction:column; gap:14px; flex:1; }
 
-  /* ---------- CAMERA ---------- */
-  .camera-wrap{
-    max-width:640px;
-    margin:0.75rem auto 0;
-    padding:0 .75rem;
-  }
-  .camera-box{
-    background:#000;
-    border-radius:14px;
-    overflow:hidden;
-    position:relative;
-    box-shadow:0 4px 16px rgba(165,25,42,.15);
-  }
-  #qrReader{ width:100%; }
-  #qrReader video{ border-radius:14px; display:block; }
-  .scan-banner{
-    position:absolute; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,.75);
-    color:#fff;
-    padding:.65rem .9rem;
-    font-size:.9rem;
-    font-weight:600;
-    text-align:center;
-    min-height:2.6rem;
-  }
-  .scan-banner.ok{ background:rgba(31,160,74,.9); }
-  .scan-banner.err{ background:rgba(220,53,69,.9); }
+    /* 3-MINUTE INACTIVITY PROGRESS BAR */
+    .inactivity-bar-container { background: #EFE9DE; border-radius: 8px; height: 8px; overflow: hidden; width: 100%; margin-top: 2px; }
+    .inactivity-bar-fill { background: var(--terracotta); height: 100%; width: 100%; transition: width 1s linear; }
 
-  /* ---------- SCANNED LIST ---------- */
-  .list-wrap{
-    max-width:640px;
-    margin:.9rem auto 0;
-    padding:0 .75rem;
-  }
-  .list-card{
-    background:#fff;
-    border-radius:14px;
-    border:1px solid #eee0d8;
-    box-shadow:0 2px 10px rgba(165,25,42,.06);
-  }
-  .list-header{
-    padding:.7rem .9rem;
-    border-bottom:1px solid #f1e5dc;
-    font-weight:700;
-    font-size:.9rem;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .count-badge{
-    background:var(--brand-orange-light);
-    color:var(--brand-crimson-dark);
-    border:1px solid #f0d3b8;
-    font-weight:800;
-    font-size:.78rem;
-    padding:.2rem .6rem;
-    border-radius:999px;
-  }
-  .scan-table{ margin-bottom:0; width:100%; }
-  .scan-table thead th{
-    background:#f6ede6;
-    color:var(--brand-crimson-dark);
-    font-size:.7rem;
-    text-transform:uppercase;
-    letter-spacing:.4px;
-    border:none;
-    padding:.5rem .7rem;
-  }
-  .scan-table tbody td{
-    font-size:.87rem;
-    vertical-align:middle;
-    padding:.5rem .7rem;
-  }
-  .qty-adjust{ display:inline-flex; align-items:center; gap:.35rem; }
-  .qty-adjust button{
-    width:24px; height:24px; line-height:1;
-    border:1px solid var(--brand-orange);
-    background:var(--brand-orange-light);
-    color:var(--brand-crimson-dark);
-    border-radius:6px; font-size:.72rem;
-  }
-  .remove-btn{ border:none; background:none; color:#dc3545; font-size:.95rem; }
-  .empty-list{ text-align:center; color:#a99184; padding:1.6rem; font-size:.85rem; }
+    /* 3-SECOND BLUETOOTH COUNTDOWN BADGE */
+    .timer-badge-display {
+      display: none; align-items: center; justify-content: center; gap: 8px;
+      background: var(--terracotta); color: #fff; padding: 14px 16px; border-radius: 12px;
+      font-size: 16px; font-weight: 700; text-align: center;
+      box-shadow: 0 6px 16px rgba(166,60,25,0.35); animation: pulseTimer 0.5s infinite alternate;
+      border: 2px solid #73270e;
+    }
+    .timer-badge-display.active { display: flex !important; }
+    @keyframes pulseTimer { from { transform: scale(0.98); } to { transform: scale(1.02); } }
 
-  /* ---------- BOTTOM BAR (Operator + Final Submit) ---------- */
-  .bottom-bar{
-    position:fixed;
-    left:0; right:0; bottom:0;
-    background:#fff;
-    border-top:1px solid #eee0d8;
-    box-shadow:0 -2px 12px rgba(0,0,0,.08);
-    padding:.6rem .9rem;
-    z-index:1030;
-  }
-  .bottom-bar-inner{
-    max-width:640px;
-    margin:0 auto;
-  }
-  .btn-final-submit{
-    background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
-    border:none;
-    color:#fff;
-    font-weight:700;
-    font-size:.85rem;
-    padding:.55rem 1rem;
-    border-radius:8px;
-    white-space:nowrap;
-  }
-  .btn-final-submit:disabled{ opacity:.5; }
-</style>
+    .giant-scan-box {
+      width: 100%; padding: 26px 16px; text-align: center;
+      border: 2px dashed var(--terracotta); border-radius: 12px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      transition: all 0.2s; background: var(--terracotta-soft); color: var(--terracotta);
+    }
+    .giant-scan-box strong { font-size: 16px; letter-spacing: 0.02em; }
+    .giant-scan-box span { font-size: 12px; opacity: 0.85; }
+    .giant-scan-box:active { transform: scale(0.97); }
+    .giant-scan-box.disabled { opacity: 0.45; pointer-events: none; }
+
+    /* LATEST SCANNED PREVIEW DISPLAY */
+    .last-scanned-card {
+      background: #FAF7F2; border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+      display: flex; flex-direction: column; gap: 4px; border-left: 5px solid var(--terracotta);
+    }
+    .last-scanned-card label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-soft); }
+    .last-scanned-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--text); margin: 0; }
+    .last-scanned-meta { font-size: 13px; font-weight: 600; color: var(--terracotta); display: flex; justify-content: space-between; margin-top: 4px; }
+
+    /* HISTORY LIST */
+    .history-scroll-box {
+      border: 1px solid var(--border); border-radius: 12px; background: #FAF7F2; 
+      min-height: 280px; max-height: 400px; overflow-y: auto; padding: 4px 14px; flex: 1;
+    }
+    .history-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13.5px; padding: 12px 0; border-bottom: 1px dashed var(--border);
+    }
+    .history-row:last-child { border-bottom: none; }
+    .history-left { display: flex; flex-direction: column; gap: 2px; }
+    .history-right { display: flex; align-items: center; gap: 10px; }
+
+    .history-delete-btn {
+      background: #F2E8DB; border: none; color: #9E2F11; font-size: 13px;
+      font-weight: 700; cursor: pointer; width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .history-delete-btn:active { transform: scale(0.88); }
+
+    .master-submit-btn {
+      width: 100%; padding: 15px; border: none; border-radius: 10px; 
+      font-size: 15px; font-weight: 700; font-family: inherit; color: #fff; 
+      cursor: pointer; background: var(--terracotta); box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .status-msg-bar { min-height: 18px; font-size: 13px; font-weight: 600; text-align: center; }
+    .status-msg-bar.success { color: #3D5E26; }
+    .status-msg-bar.error { color: var(--terracotta); }
+
+    /* SPLIT SCREEN SCANNER MODAL (50/50 LAYOUT) */
+    #scanner-modal {
+      position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none;
+      flex-direction: column; height: 100vh; width: 100vw; overflow: hidden;
+    }
+    #scanner-modal.active { display: flex; }
+
+    /* TOP 50%: CAMERA VIEWFINDER */
+    .scanner-top-split {
+      height: 50vh; width: 100%; position: relative; background: #000; overflow: hidden;
+    }
+    #scanner-viewport { position: absolute; inset: 0; }
+    #scanner-viewport video, #scanner-viewport canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; object-fit: cover; }
+    .scanner-topbar {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center;
+      justify-content: space-between; padding: 12px 16px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+    }
+    .scanner-cancel-action {
+      background: rgba(255,255,255,0.25); color: #fff; border: none; border-radius: 8px;
+      padding: 8px 14px; font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .scanner-guide-box {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 80%; max-width: 300px; height: 120px; border: 3px solid var(--terracotta);
+      border-radius: 12px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.55); z-index: 2; pointer-events: none;
+    }
+
+    /* BOTTOM 50%: DETECTED ITEM DETAILS AND WEIGHT DISPLAY */
+    .scanner-bottom-split {
+      height: 50vh; width: 100%; padding: 16px; display: flex; flex-direction: column;
+      gap: 12px; background: var(--surface); border-top: 3px solid var(--terracotta); overflow-y: auto;
+    }
+    .split-item-card {
+      background: #FAF7F2; border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .split-item-card label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-soft); }
+    .split-item-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--text); margin: 0; }
+    .split-item-details { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--terracotta); }
+
+    /* POPUP FORM */
+    .dashboard-popup-backdrop { position: fixed; inset: 0; background: rgba(20, 16, 12, 0.45); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+    .dashboard-popup-backdrop.open { opacity: 1; pointer-events: auto; }
+    .dashboard-popup-card { background: #fff; border: 1px solid var(--border); width: 100%; max-width: 360px; border-radius: 20px; padding: 22px; box-shadow: 0 20px 45px rgba(0,0,0,0.2); transform: scale(0.92); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
+    .dashboard-popup-backdrop.open .dashboard-popup-card { transform: scale(1); }
+    .popup-item-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--text); margin: 0 0 4px 0; text-align: center; }
+    .popup-item-category { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); text-align: center; font-weight: 700; margin-bottom: 18px; }
+    .popup-input-container { background: #FCFAF6; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+    .popup-input-container label { display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-soft); text-align: center; margin-bottom: 4px; }
+    .popup-input-field { width: 100%; padding: 4px; font-size: 26px; font-weight: 700; border: none; background: transparent; text-align: center; color: var(--text); outline: none; font-family: inherit; }
+    .popup-action-column { display: flex; flex-direction: column; gap: 10px; }
+    .popup-action-btn { padding: 13px; border: none; border-radius: 10px; font-size: 14.5px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; }
+    .popup-action-btn.cancel { background: #EFE9DE; color: var(--text); }
+    .popup-action-btn.done { width: 100%; background: var(--terracotta); color: #fff; }
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <header>
+      <h1>Raghuvir Sweets</h1>
+      <p>Dispatch Outward Dashboard</p>
+    </header>
 
-<div class="config-banner" id="configBanner">
-  <i class="fa-solid fa-triangle-exclamation"></i>
-  APPS_SCRIPT_URL is not set — open this file and paste your deployed Apps Script /exec URL near the top of the &lt;script&gt; section.
-</div>
-
-<!-- Hidden input that stays focused to receive Bluetooth barcode scanner
-     input (Bluetooth scanners act like a keyboard: they type the code then
-     press Enter automatically). Invisible, but functionally always ready. -->
-<input type="text" id="btScannerInput" autocomplete="off" style="position:fixed; top:-1000px; left:-1000px; opacity:0;">
-
-<!-- ===================== HEADER ===================== -->
-<div class="app-header">
-  <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
-  <span class="brand-name">Raghuvir Stock Scan</span>
-  <span class="branch-pill" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
-  <span class="branch-pill" style="margin-left:.35rem; background:rgba(255,255,255,.1);"><i class="fa-brands fa-bluetooth-b"></i> Ready</span>
-</div>
-
-<!-- ===================== CAMERA (always live) ===================== -->
-<div class="camera-wrap">
-  <div class="camera-box">
-    <div id="qrReader"></div>
-    <div class="scan-banner" id="scanBanner">Starting camera...</div>
-  </div>
-</div>
-
-<!-- ===================== SCANNED ITEMS LIST ===================== -->
-<div class="list-wrap">
-  <div class="list-card">
-    <div class="list-header">
-      <span><i class="fa-solid fa-list-ol"></i> Scanned Items</span>
-      <span class="count-badge" id="countBadge">0 items</span>
+    <div class="branch-btn-row">
+      <button class="branch-select-btn" type="button" data-branch="Ram Mandir" onclick="selectBranch('Ram Mandir')">Ram Mandir</button>
+      <button class="branch-select-btn" type="button" data-branch="Vishrambagh" onclick="selectBranch('Vishrambagh')">Vishrambagh</button>
     </div>
-    <div class="table-responsive">
-      <table class="table scan-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Weight</th>
-            <th>Qty</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="scanTableBody">
-          <tr><td colspan="4" class="empty-list">Point the camera at a barcode to start scanning...</td></tr>
-        </tbody>
-      </table>
+
+    <div class="dashboard-grid">
+      <!-- LEFT SCANNING & PREVIEW PANEL -->
+      <div class="panel">
+        <div class="panel-head">
+          <span>🚚 Dispatch Scanner</span>
+          <span id="session-idle-label" style="font-size:12px; font-family:'Inter',sans-serif; opacity:0.85;">Inactivity: 3m 00s</span>
+        </div>
+        <div class="panel-body">
+          <div class="inactivity-bar-container">
+            <div id="inactivity-progress" class="inactivity-bar-fill"></div>
+          </div>
+
+          <!-- PROMINENT BLUETOOTH COUNTDOWN BADGE -->
+          <div id="scan-timer-badge" class="timer-badge-display">
+            <span>⏱ Scan Lockout Active:</span>
+            <span id="scan-timer-count">3</span>s
+          </div>
+
+          <div id="scan-box-wrapper" class="giant-scan-box disabled" onclick="triggerLiveScanner()">
+            <strong>⚡ BLUETOOTH / CAMERA SCANNER</strong>
+            <span id="scan-box-subtitle">Select Branch Destination to Enable</span>
+          </div>
+
+          <!-- SIDE PREVIEW OF LATEST SCANNED ITEM -->
+          <div class="last-scanned-card">
+            <label>Scanned Item Preview</label>
+            <h3 id="preview-item-name" class="last-scanned-title">---</h3>
+            <div class="last-scanned-meta">
+              <span id="preview-item-code">Code: ---</span>
+              <span id="preview-item-weight">Weight: --- kg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE HISTORY LOG -->
+      <div class="panel">
+        <div class="panel-head">
+          <span>📋 Dispatch Workspace History</span>
+          <span id="entry-count-tag" style="font-size:13px;">0 Items</span>
+        </div>
+        <div class="panel-body">
+          <div id="dashboard-history-scroll" class="history-scroll-box">No entries logged in current batch workspace yet.</div>
+          <button class="master-submit-btn" type="button" onclick="submitEntireDeskBatch()">🚀 Save Dispatch Batch</button>
+          <div id="dashboard-status-log" class="status-msg-bar"></div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ===================== BOTTOM BAR: Final Submit ===================== -->
-<div class="bottom-bar">
-  <div class="bottom-bar-inner">
-    <button class="btn-final-submit w-100" id="finalSubmitBtn" type="button" disabled>
-      <i class="fa-solid fa-check-double"></i> Submit Scanned Items
-    </button>
+  <!-- SPLIT SCREEN CAMERA SCANNER MODAL (50/50 VIEW) -->
+  <div id="scanner-modal">
+    <!-- TOP 50%: LIVE VIEWFINDER -->
+    <div class="scanner-top-split">
+      <div id="scanner-viewport"></div>
+      <div class="scanner-topbar">
+        <span style="color:#fff; font-size:14px; font-weight:600;">📷 Live Camera View</span>
+        <button class="scanner-cancel-action" type="button" onclick="terminateLiveScanner()">✕ Done / Close</button>
+      </div>
+      <div class="scanner-guide-box"></div>
+    </div>
+
+    <!-- BOTTOM 50%: DETECTED ITEM & WEIGHT DETAILS -->
+    <div class="scanner-bottom-split">
+      <div class="split-item-card">
+        <label>Detected Item & Weight</label>
+        <h3 id="split-preview-name" class="split-item-title">Ready to Scan...</h3>
+        <div class="split-item-details">
+          <span id="split-preview-code">Barcode: ---</span>
+          <span id="split-preview-weight">Weight: --- kg</span>
+        </div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column;">
+        <span style="font-size:12px; font-weight:700; color:var(--text-soft); text-transform:uppercase; margin-bottom:6px;">Workspace Queue</span>
+        <div id="split-mini-history" style="border:1px solid var(--border); border-radius:10px; background:#FAF7F2; padding:8px; font-size:13px; overflow-y:auto; flex:1;">
+          No items scanned in this session.
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- Audio feedback -->
-<audio id="beepSuccess" preload="auto">
-  <source src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" type="audio/ogg">
-</audio>
-<audio id="beepError" preload="auto">
-  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
-</audio>
+  <!-- MANUAL WEIGHT ENTRY POPUP -->
+  <div id="dashboard-popup-backdrop" class="dashboard-popup-backdrop">
+    <div class="dashboard-popup-card">
+      <h3 id="pop-product-name" class="popup-item-title">Product Description</h3>
+      <div id="pop-product-cat" class="popup-item-category">Category</div>
+      
+      <div class="popup-input-container">
+        <label>Enter Weight / Quantity (kg)</label>
+        <input id="pop-qty-input" class="popup-input-field" type="number" step="any" value="1">
+      </div>
 
-<script>
-/* ============================================================================
-   ⚠️ REQUIRED CONFIG — paste your deployed Apps Script Web App URL here.
-============================================================================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec';
+      <div class="popup-action-column">
+        <button class="popup-action-btn done" type="button" onclick="closeDashboardPopupCard('done')">✔️ ADD ITEM</button>
+        <button class="popup-action-btn cancel" type="button" onclick="closeDashboardPopupCard('cancel')">Cancel</button>
+      </div>
+    </div>
+  </div>
 
-/* ============================================================================
-   BRANCH CONTEXT — from the page URL:
-     index.html?branch=BR1   -> Branch 1
-     index.html?branch=BR2   -> Branch 2
-============================================================================ */
-const BRANCH_LABELS = { BR1: 'Branch 1', BR2: 'Branch 2' };
-const urlParams = new URLSearchParams(window.location.search);
-const BRANCH_ID = (function () {
-  const p = (urlParams.get('branch') || '').toUpperCase();
-  return BRANCH_LABELS[p] ? p : 'BR1';
-})();
-const BRANCH_LABEL = BRANCH_LABELS[BRANCH_ID];
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+  <script>
+    function $(id){ return document.getElementById(id); }
 
-/* ============================================================================
-   STATE
-============================================================================ */
-let scannedItems = [];        // { barcodeCode, itemName, netWeight, dept, countedQty }
-let html5QrCode = null;
-let lookupBusy = false;
-let lastCode = '';
-let lastCodeTime = 0;
-const SCAN_COOLDOWN_MS = 600; // faster repeat-scan of the same item, still avoids duplicate frame triggers
-let scanQueue = [];           // holds barcodes waiting to be looked up, in arrival order
-let queueRunning = false;     // true while the queue worker is processing
+    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWuI1eHi8DMil_OLkMaM_wXq3i2KUksLk6w65xLMEUStfJbKLS44gZqW7zoYv-7BfZxA/exec";
 
-/* ============================================================================
-   INIT
-============================================================================ */
-document.addEventListener('DOMContentLoaded', function () {
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
-    document.getElementById('configBanner').style.display = 'block';
-  }
-  document.getElementById('branchPill').innerHTML = '<i class="fa-solid fa-store"></i> ' + BRANCH_LABEL;
-  document.getElementById('finalSubmitBtn').addEventListener('click', finalSubmit);
-  wireBluetoothScanner();
-  startCamera();
-});
+    var centralBatchCollection = []; 
+    var currentScannedPayload = null; 
+    var selectedBranchName = null;
+    var scanCountdownInterval = null;
+    var isScanOnCooldown = false;
 
-/* ============================================================================
-   CAMERA — starts automatically, stays live, scans continuously
-============================================================================ */
-function startCamera() {
-  html5QrCode = new Html5Qrcode('qrReader');
+    /* 3-MINUTE (180s) INACTIVITY SAFETY TIMER */
+    var INACTIVITY_LIMIT_SECONDS = 180;
+    var secondsInactivityRemaining = INACTIVITY_LIMIT_SECONDS;
+    var inactivityInterval = null;
 
-  const config = {
-    fps: 20,
-    qrbox: { width: 250, height: 140 },
-    experimentalFeatures: {
-      useBarCodeDetectorIfSupported: true // uses the browser's native, much faster decoder when available
-    },
-    formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.QR_CODE
-    ]
-  };
+    function resetInactivityTimer() {
+      secondsInactivityRemaining = INACTIVITY_LIMIT_SECONDS;
+      updateInactivityUI();
+    }
 
-  html5QrCode.start(
-    { facingMode: 'environment' },
-    config,
-    processScan,
-    function onFail() { /* silent — fires continuously while nothing is in frame */ }
-  ).then(function () {
-    setBanner('Point camera at a barcode...', '');
-  }).catch(function (err) {
-    setBanner('Camera error: ' + err, 'err');
-  });
-}
+    function startInactivityTracker() {
+      if (inactivityInterval) clearInterval(inactivityInterval);
+      inactivityInterval = setInterval(function() {
+        secondsInactivityRemaining--;
+        if (secondsInactivityRemaining <= 0) {
+          handleInactivityTimeout();
+        } else {
+          updateInactivityUI();
+        }
+      }, 1000);
+    }
 
-/**
- * Called by both the camera decoder and the Bluetooth scanner input.
- * Instead of firing an API call immediately (which could overlap with a
- * previous still-in-flight lookup and risk applying results out of order),
- * every scan is pushed onto a queue and processed one at a time, strictly
- * in the order they were scanned. This is what guarantees fast scanning
- * never drops a barcode or mixes up which result belongs to which item.
- */
-function processScan(decodedText) {
-  const now = Date.now();
-  // Only dedupes REPEATS of the exact same code within the cooldown window
-  // (the camera "sees" the same barcode across many frames); different
-  // codes scanned back-to-back are never blocked by this.
-  if (decodedText === lastCode && (now - lastCodeTime) < SCAN_COOLDOWN_MS) return;
-  lastCode = decodedText;
-  lastCodeTime = now;
+    function updateInactivityUI() {
+      var mins = Math.floor(secondsInactivityRemaining / 60);
+      var secs = secondsInactivityRemaining % 60;
+      var formattedSecs = secs < 10 ? "0" + secs : secs;
+      $("session-idle-label").innerText = "Inactivity: " + mins + "m " + formattedSecs + "s";
 
-  scanQueue.push(decodedText);
-  setBanner('Queued: ' + decodedText + (scanQueue.length > 1 ? '  (' + scanQueue.length + ' waiting)' : ''), '');
-  runQueue();
-}
+      var pct = (secondsInactivityRemaining / INACTIVITY_LIMIT_SECONDS) * 100;
+      $("inactivity-progress").style.width = pct + "%";
+    }
 
-function runQueue() {
-  if (queueRunning) return;      // already draining the queue
-  if (scanQueue.length === 0) return;
+    function handleInactivityTimeout() {
+      if (centralBatchCollection.length > 0) {
+        setLogStatus("⚠️ Idle 3 mins reached. Please save workspace.", "error");
+      }
+      resetInactivityTimer();
+    }
 
-  queueRunning = true;
-  const code = scanQueue.shift();
-  setBanner('Looking up ' + code + '...', '');
+    /* HARDWARE BLUETOOTH SCANNER INTERCEPTOR & LOCKOUT */
+    var bluetoothBuffer = "";
+    var bluetoothTimer = null;
 
-  apiGet({ action: 'getItemByBarcode', code: code, branch: BRANCH_ID })
-    .then(function (result) {
-      if (!result.found) {
-        playSound('beepError');
-        setBanner('❌ Not found: ' + code, 'err');
+    window.addEventListener("keydown", function(e) {
+      resetInactivityTimer();
+      if (!selectedBranchName) return;
+      if (document.activeElement && document.activeElement.tagName === "INPUT") return;
+
+      if (isScanOnCooldown) {
+        bluetoothBuffer = "";
         return;
       }
 
-      const item = result.item;
-      const displayName = item.printName || item.productName;
-
-      const existing = scannedItems.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
-      if (existing) {
-        existing.countedQty += 1;
-      } else {
-        scannedItems.push({
-          barcodeCode: item.userDefinedCode,
-          itemName: displayName,
-          netWeight: item.netWeight,
-          dept: item.dept,
-          countedQty: 1
-        });
+      if (e.key === "Enter") {
+        if (bluetoothBuffer.trim().length > 0) {
+          var scannedText = bluetoothBuffer.trim();
+          bluetoothBuffer = "";
+          start3SecondScanTimer();
+          setTimeout(function() {
+            evaluateIncomingScannedCode(scannedText);
+          }, 10);
+        }
+      } else if (e.key.length === 1) {
+        bluetoothBuffer += e.key;
+        clearTimeout(bluetoothTimer);
+        bluetoothTimer = setTimeout(function() { bluetoothBuffer = ""; }, 100);
       }
-
-      playSound('beepSuccess');
-      setBanner('✅ ' + displayName + (item.netWeight ? ' (' + item.netWeight + ')' : ''), 'ok');
-      renderList();
-    })
-    .catch(function (err) {
-      playSound('beepError');
-      setBanner('Lookup error — check connection.', 'err');
-    })
-    .finally(function () {
-      queueRunning = false;
-      if (scanQueue.length > 0) runQueue(); // immediately process the next queued scan
     });
-}
 
-/* ============================================================================
-   BLUETOOTH BARCODE SCANNER SUPPORT
-   Bluetooth scanners behave like a keyboard: they "type" the barcode into
-   whatever input is focused, then send an Enter keypress automatically.
-   This hidden input stays focused at all times so a Bluetooth scanner
-   works alongside the camera without any extra setup.
-============================================================================ */
-function focusBtInput() {
-  const el = document.getElementById('btScannerInput');
-  if (el) el.focus();
-}
+    function start3SecondScanTimer() {
+      isScanOnCooldown = true;
+      var badge = $("scan-timer-badge");
+      var countEl = $("scan-timer-count");
+      var secondsLeft = 3;
 
-function wireBluetoothScanner() {
-  const btInput = document.getElementById('btScannerInput');
+      if (scanCountdownInterval) clearInterval(scanCountdownInterval);
+      
+      countEl.innerText = secondsLeft;
+      badge.style.display = "flex";
+      badge.classList.add("active");
 
-  btInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const val = btInput.value.trim();
-      btInput.value = '';
-      if (val.length > 0) processScan(val);
+      void badge.offsetHeight;
+
+      scanCountdownInterval = setInterval(function() {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          clearInterval(scanCountdownInterval);
+          badge.classList.remove("active");
+          badge.style.display = "none";
+          isScanOnCooldown = false;
+        } else {
+          countEl.innerText = secondsLeft;
+        }
+      }, 1000);
     }
-  });
 
-  // Keep it focused so scans are captured the instant they happen.
-  focusBtInput();
-  document.addEventListener('click', function () {
-    setTimeout(focusBtInput, 50);
-  });
-  window.addEventListener('focus', focusBtInput);
-}
+    function selectBranch(branchName) {
+      resetInactivityTimer();
+      selectedBranchName = branchName;
+      var buttons = document.querySelectorAll(".branch-select-btn");
+      buttons.forEach(function(btn){
+        if (btn.getAttribute("data-branch") === selectedBranchName) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+      $("scan-box-wrapper").classList.remove("disabled");
+      $("scan-box-subtitle").innerText = "Destination: " + branchName + " (Tap for Camera)";
+      setLogStatus("Destination set to " + branchName, "success");
+    }
 
-function setBanner(text, cls) {
-  const el = document.getElementById('scanBanner');
-  el.textContent = text;
-  el.className = 'scan-banner' + (cls ? ' ' + cls : '');
-}
+    var jsonpCounter = 0;
+    function executeJsonpTransfer(params, successCallback, failureCallback) {
+      jsonpCounter++;
+      var cbName = "jsonpCallback_" + jsonpCounter + "_" + Date.now();
+      var scriptElement = document.createElement("script");
+      var networkTimeout = setTimeout(function(){ removeScript(); failureCallback(new Error("Timeout")); }, 15000);
 
-/* ============================================================================
-   SCANNED ITEMS LIST
-============================================================================ */
-function renderList() {
-  const body = document.getElementById('scanTableBody');
-  const badge = document.getElementById('countBadge');
-  const submitBtn = document.getElementById('finalSubmitBtn');
-
-  badge.textContent = scannedItems.length + ' item' + (scannedItems.length === 1 ? '' : 's');
-  submitBtn.disabled = scannedItems.length === 0;
-
-  if (scannedItems.length === 0) {
-    body.innerHTML = '<tr><td colspan="4" class="empty-list">Point the camera at a barcode to start scanning...</td></tr>';
-    return;
-  }
-
-  const reversed = scannedItems.slice().reverse();
-  const originalIndexOf = function (entry) { return scannedItems.indexOf(entry); };
-
-  body.innerHTML = reversed.map(function (entry) {
-    const idx = originalIndexOf(entry);
-    return (
-      '<tr>' +
-        '<td>' + escapeHtml(entry.itemName) + '</td>' +
-        '<td class="text-muted">' + escapeHtml(entry.netWeight || '-') + '</td>' +
-        '<td>' +
-          '<span class="qty-adjust">' +
-            '<button type="button" onclick="adjustQty(' + idx + ', -1)"><i class="fa-solid fa-minus"></i></button>' +
-            '<span class="fw-semibold">' + escapeHtml(String(entry.countedQty)) + '</span>' +
-            '<button type="button" onclick="adjustQty(' + idx + ', 1)"><i class="fa-solid fa-plus"></i></button>' +
-          '</span>' +
-        '</td>' +
-        '<td><button class="remove-btn" onclick="removeItem(' + idx + ')" title="Remove"><i class="fa-solid fa-trash"></i></button></td>' +
-      '</tr>'
-    );
-  }).join('');
-}
-
-function adjustQty(index, delta) {
-  const entry = scannedItems[index];
-  if (!entry) return;
-  entry.countedQty = Math.max(0, entry.countedQty + delta);
-  renderList();
-}
-
-function removeItem(index) {
-  scannedItems.splice(index, 1);
-  renderList();
-}
-
-/* ============================================================================
-   FINAL SUBMIT
-============================================================================ */
-function finalSubmit() {
-  if (scannedItems.length === 0) return;
-
-  const btn = document.getElementById('finalSubmitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-  const entries = scannedItems.map(function (e) {
-    return {
-      barcodeCode: e.barcodeCode,
-      countedQty: e.countedQty,
-      operatorName: '',
-      remarks: ''
-    };
-  });
-
-  apiPost({ action: 'recordStockCountBatch', data: { branchId: BRANCH_ID, entries: entries } })
-    .then(function (result) {
-      btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Submit';
-      if (result.success) {
-        playSound('beepSuccess');
-        setBanner('✅ Saved ' + result.savedCount + ' items to ' + BRANCH_LABEL, 'ok');
-        scannedItems = [];
-        renderList();
-      } else {
-        playSound('beepError');
-        setBanner(result.message || 'Submit failed.', 'err');
-        btn.disabled = false;
+      function removeScript(){
+        clearTimeout(networkTimeout);
+        try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+        if (scriptElement.parentNode) scriptElement.parentNode.removeChild(scriptElement);
       }
-    })
-    .catch(function (err) {
-      btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Submit';
-      playSound('beepError');
-      setBanner('Error: ' + err.message, 'err');
-      btn.disabled = false;
-    });
-}
+      window[cbName] = function(data){ removeScript(); successCallback(data); };
+      var queryParams = Object.keys(params).map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k])).join("&");
+      scriptElement.src = APPS_SCRIPT_URL + "?" + queryParams + "&callback=" + cbName;
+      scriptElement.onerror = function(){ removeScript(); failureCallback(new Error("Network Error")); };
+      document.body.appendChild(scriptElement);
+    }
 
-/* ============================================================================
-   API HELPERS
-============================================================================ */
-function apiGet(params) {
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
-    return Promise.reject(new Error('APPS_SCRIPT_URL is not set.'));
-  }
-  const query = new URLSearchParams(params).toString();
-  return fetch(APPS_SCRIPT_URL + '?' + query, { method: 'GET' })
-    .then(function (res) { return res.text(); })
-    .then(function (text) {
-      try { return JSON.parse(text); }
-      catch (e) { throw new Error('Invalid API response — check deployment access is "Anyone".'); }
-    });
-}
+    function parseCustomBarcode(rawCode) {
+      // Strips leading $, #, pound (£,₤), and whitespace symbols
+      var cleanCode = String(rawCode).trim().replace(/^[$#£₤\s]+/g, '');
+      if (cleanCode.length <= 4) return { itemCode: cleanCode, weight: null };
 
-function apiPost(bodyObj) {
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
-    return Promise.reject(new Error('APPS_SCRIPT_URL is not set.'));
-  }
-  return fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(bodyObj)
-  })
-    .then(function (res) { return res.text(); })
-    .then(function (text) {
-      try { return JSON.parse(text); }
-      catch (e) { throw new Error('Invalid API response — check deployment access is "Anyone".'); }
-    });
-}
+      var itemCode = cleanCode.substring(0, 4);
+      var weightStr = cleanCode.substring(4);
+      var weightVal = 0;
 
-/* ============================================================================
-   UTILITIES
-============================================================================ */
-function playSound(id) {
-  const audio = document.getElementById(id);
-  if (audio) {
-    audio.currentTime = 0;
-    audio.play().catch(function () {});
-  }
-}
+      if (weightStr.length >= 3) {
+        var baseStr = weightStr.padStart(4, '0');
+        var integerPart = baseStr.slice(0, -3);
+        var decimalPart = baseStr.slice(-3);
+        weightVal = parseFloat(integerPart + "." + decimalPart);
+      } else {
+        weightVal = parseFloat(weightStr);
+      }
 
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-</script>
+      return { itemCode: itemCode, weight: isNaN(weightVal) ? null : weightVal };
+    }
+
+    function evaluateIncomingScannedCode(rawCodeString) {
+      if (!selectedBranchName) return;
+      if (navigator.vibrate) navigator.vibrate(50);
+
+      var parsed = parseCustomBarcode(rawCodeString);
+      var itemCode = parsed.itemCode;
+      var extractedWeight = parsed.weight;
+
+      currentScannedPayload = {
+        barcode: itemCode,
+        qty: extractedWeight !== null ? extractedWeight : 1,
+        product: "Code: " + itemCode,
+        category: "Loading..."
+      };
+
+      setLogStatus("⚡ Fetching item: " + itemCode + "...", "success");
+
+      executeJsonpTransfer({ action: "lookup", barcode: itemCode }, function(response){
+        if (response && response.success && response.data) {
+          currentScannedPayload.product = response.data.name;
+          currentScannedPayload.category = response.data.category;
+        } else {
+          currentScannedPayload.product = "Item (" + itemCode + ")";
+          currentScannedPayload.category = "Master Missing";
+        }
+
+        if (parsed.weight !== null) {
+          commitPayloadEntryToStaging(currentScannedPayload.qty);
+        } else {
+          $("pop-product-name").innerText = currentScannedPayload.product;
+          $("pop-product-cat").innerText = currentScannedPayload.category;
+          $("pop-qty-input").value = "1";
+          $("dashboard-popup-backdrop").classList.add("open");
+          setTimeout(() => $("pop-qty-input").focus(), 100);
+        }
+      }, function(err){
+        if (parsed.weight !== null) {
+          commitPayloadEntryToStaging(currentScannedPayload.qty);
+        } else {
+          $("pop-product-name").innerText = currentScannedPayload.product;
+          $("pop-product-cat").innerText = "Offline";
+          $("dashboard-popup-backdrop").classList.add("open");
+        }
+      });
+    }
+
+    function commitPayloadEntryToStaging(quantityToLog) {
+      var itemObject = {
+        type: "DISPATCH",
+        barcode: currentScannedPayload.barcode,
+        category: currentScannedPayload.category,
+        product: currentScannedPayload.product,
+        qty: quantityToLog,
+        branch: selectedBranchName
+      };
+
+      centralBatchCollection.unshift(itemObject);
+
+      // UPDATE DASHBOARD PREVIEW CARD
+      $("preview-item-name").innerText = itemObject.product;
+      $("preview-item-code").innerText = "Code: " + itemObject.barcode + " | Branch: " + itemObject.branch;
+      $("preview-item-weight").innerText = "Weight: " + itemObject.qty + " kg";
+
+      // UPDATE SPLIT SCREEN BOTTOM PREVIEW CARD
+      $("split-preview-name").innerText = itemObject.product;
+      $("split-preview-code").innerText = "Barcode: " + itemObject.barcode + " | Branch: " + itemObject.branch;
+      $("split-preview-weight").innerText = "Weight: " + itemObject.qty + " kg";
+
+      refreshHistoryLogDisplay();
+      setLogStatus("✅ Added: " + itemObject.product + " (" + itemObject.qty + " kg)", "success");
+    }
+
+    function closeDashboardPopupCard(actionType) {
+      if (actionType === 'cancel') {
+        $("dashboard-popup-backdrop").classList.remove("open");
+        return;
+      }
+
+      var userTypedQty = parseFloat($("pop-qty-input").value);
+      if (isNaN(userTypedQty) || userTypedQty <= 0) {
+        alert("Please enter a valid weight amount!");
+        return;
+      }
+
+      commitPayloadEntryToStaging(userTypedQty);
+      $("dashboard-popup-backdrop").classList.remove("open");
+    }
+
+    function deleteRowEntryItem(index) {
+      centralBatchCollection.splice(index, 1);
+      refreshHistoryLogDisplay();
+      setLogStatus("Entry removed.", "success");
+    }
+
+    function refreshHistoryLogDisplay() {
+      $("entry-count-tag").innerText = centralBatchCollection.length + " Items";
+      var scrollBox = $("dashboard-history-scroll");
+      var miniBox = $("split-mini-history");
+
+      if (centralBatchCollection.length === 0) {
+        scrollBox.innerHTML = '<div style="text-align:center; color:#888; padding:20px; font-size:13px;">No entries logged in current batch workspace yet.</div>';
+        miniBox.innerHTML = 'No items scanned in this session.';
+        return;
+      }
+
+      var htmlRowsGrid = "";
+      var miniHtml = "";
+
+      for (var i = 0; i < centralBatchCollection.length; i++) {
+        var entry = centralBatchCollection[i];
+        htmlRowsGrid += `
+          <div class="history-row">
+            <div class="history-left">
+              <strong style="color:var(--text); font-size:14px;">${entry.product}</strong>
+              <span style="color:var(--text-soft); font-size:11px;">Code: ${entry.barcode} | ${entry.branch}</span>
+            </div>
+            <div class="history-right">
+              <span style="font-weight:700; color:var(--terracotta); font-size:14px; background:#F5DFD6; padding:4px 8px; border-radius:6px;">${entry.qty} kg</span>
+              <button class="history-delete-btn" type="button" onclick="deleteRowEntryItem(${i})">✕</button>
+            </div>
+          </div>`;
+
+        miniHtml += `<div style="padding:4px 0; border-bottom:1px solid #EFE9DE; display:flex; justify-content:space-between;">
+          <span><strong>${entry.product}</strong> (${entry.barcode})</span>
+          <span style="font-weight:700; color:var(--terracotta);">${entry.qty} kg</span>
+        </div>`;
+      }
+      scrollBox.innerHTML = htmlRowsGrid;
+      miniBox.innerHTML = miniHtml;
+    }
+
+    /* CAMERA SCANNER HANDLER WITH RESTRICTED TARGET RECTANGLE AREA */
+    var scannerRunning = false;
+    function triggerLiveScanner() {
+      if (!selectedBranchName) {
+        alert("Please select a Branch (Ram Mandir / Vishrambagh) before scanning.");
+        return;
+      }
+      if ($("scanner-modal").classList.contains("active")) return;
+      isScanOnCooldown = false;
+      $("scanner-modal").classList.add("active");
+
+      Quagga.init({
+        inputStream: { 
+          name: "Live", 
+          type: "LiveStream", 
+          target: document.querySelector("#scanner-viewport"), 
+          constraints: { facingMode: "environment", width: 1280, height: 720 },
+          area: { // Restrict barcode detection specifically to target box area
+            top: "30%",    
+            right: "10%",  
+            left: "10%",   
+            bottom: "30%"  
+          }
+        },
+        locator: { patchSize: "medium", halfSample: false },
+        decoder: { readers: ["code_128_reader", "ean_reader", "code_39_reader"] }
+      }, function(err){ if(!err) { Quagga.start(); scannerRunning = true; } });
+      Quagga.onDetected(onQuaggaFrameHit);
+    }
+
+    function onQuaggaFrameHit(resultData) {
+      if (!scannerRunning || isScanOnCooldown) return;
+      var rawStringCode = resultData.codeResult.code;
+      if (rawStringCode) {
+        start3SecondScanTimer();
+        evaluateIncomingScannedCode(rawStringCode);
+      }
+    }
+
+    function terminateLiveScanner() {
+      scannerRunning = false;
+      isScanOnCooldown = false;
+      try { Quagga.offDetected(onQuaggaFrameHit); Quagga.stop(); } catch(e){}
+      $("scanner-modal").classList.remove("active");
+    }
+
+    function submitEntireDeskBatch() {
+      if (centralBatchCollection.length === 0) {
+        setLogStatus("Workspace history log is empty.", "error");
+        return;
+      }
+
+      if (!confirm("Confirm submission of " + centralBatchCollection.length + " dispatch items to " + selectedBranchName + "?")) return;
+
+      setLogStatus("Uploading records to Cloud Sheet...", "");
+      var serializedBatch = JSON.stringify(centralBatchCollection);
+
+      executeJsonpTransfer({ action: "saveBatch", batch: serializedBatch }, function(res){
+        if (res && res.success) {
+          alert("All dispatch entries pushed successfully!");
+          centralBatchCollection = [];
+          refreshHistoryLogDisplay();
+          setLogStatus("Batch submitted successfully!", "success");
+        } else {
+          setLogStatus("Error occurred during save processing.", "error");
+        }
+      }, function(e){ setLogStatus("Cloud submission pipeline connection timeout.", "error"); });
+    }
+
+    function setLogStatus(msg, classification) {
+      var bar = $("dashboard-status-log");
+      if(!bar) return;
+      bar.innerText = msg;
+      bar.className = "status-msg-bar " + classification;
+    }
+
+    startInactivityTracker();
+  </script>
 </body>
 </html>
