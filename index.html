@@ -149,16 +149,6 @@
   .bottom-bar-inner{
     max-width:640px;
     margin:0 auto;
-    display:flex;
-    gap:.6rem;
-    align-items:center;
-  }
-  .bottom-bar input{
-    flex:1;
-    border:1.5px solid var(--brand-orange);
-    border-radius:8px;
-    padding:.5rem .7rem;
-    font-size:.85rem;
   }
   .btn-final-submit{
     background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
@@ -220,12 +210,11 @@
   </div>
 </div>
 
-<!-- ===================== BOTTOM BAR: Operator + Final Submit ===================== -->
+<!-- ===================== BOTTOM BAR: Final Submit ===================== -->
 <div class="bottom-bar">
   <div class="bottom-bar-inner">
-    <input type="text" id="operatorNameInput" placeholder="Operator name...">
-    <button class="btn-final-submit" id="finalSubmitBtn" type="button" disabled>
-      <i class="fa-solid fa-check-double"></i> Submit
+    <button class="btn-final-submit w-100" id="finalSubmitBtn" type="button" disabled>
+      <i class="fa-solid fa-check-double"></i> Submit Scanned Items
     </button>
   </div>
 </div>
@@ -418,12 +407,6 @@ function removeItem(index) {
    FINAL SUBMIT
 ============================================================================ */
 function finalSubmit() {
-  const operatorName = document.getElementById('operatorNameInput').value.trim();
-  if (!operatorName) {
-    setBanner('Enter operator name before submitting.', 'err');
-    document.getElementById('operatorNameInput').focus();
-    return;
-  }
   if (scannedItems.length === 0) return;
 
   const btn = document.getElementById('finalSubmitBtn');
@@ -434,7 +417,7 @@ function finalSubmit() {
     return {
       barcodeCode: e.barcodeCode,
       countedQty: e.countedQty,
-      operatorName: operatorName,
+      operatorName: '',
       remarks: ''
     };
   });
