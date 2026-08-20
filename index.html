@@ -170,11 +170,17 @@
   APPS_SCRIPT_URL is not set — open this file and paste your deployed Apps Script /exec URL near the top of the &lt;script&gt; section.
 </div>
 
+<!-- Hidden input that stays focused to receive Bluetooth barcode scanner
+     input (Bluetooth scanners act like a keyboard: they type the code then
+     press Enter automatically). Invisible, but functionally always ready. -->
+<input type="text" id="btScannerInput" autocomplete="off" style="position:fixed; top:-1000px; left:-1000px; opacity:0;">
+
 <!-- ===================== HEADER ===================== -->
 <div class="app-header">
   <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
   <span class="brand-name">Raghuvir Stock Scan</span>
   <span class="branch-pill" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
+  <span class="branch-pill" style="margin-left:.35rem; background:rgba(255,255,255,.1);"><i class="fa-brands fa-bluetooth-b"></i> Ready</span>
 </div>
 
 <!-- ===================== CAMERA (always live) ===================== -->
@@ -231,7 +237,7 @@
 /* ============================================================================
    ⚠️ REQUIRED CONFIG — paste your deployed Apps Script Web App URL here.
 ============================================================================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec'; // e.g. https://script.google.com/macros/s/AKfycb.../exec
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec';
 
 /* ============================================================================
    BRANCH CONTEXT — from the page URL:
@@ -254,7 +260,9 @@ let html5QrCode = null;
 let lookupBusy = false;
 let lastCode = '';
 let lastCodeTime = 0;
-const SCAN_COOLDOWN_MS = 1200;
+const SCAN_COOLDOWN_MS = 600; // faster repeat-scan of the same item, still avoids duplicate frame triggers
+let scanQueue = [];           // holds barcodes waiting to be looked up, in arrival order
+let queueRunning = false;     // true while the queue worker is processing
 
 /* ============================================================================
    INIT
@@ -265,6 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   document.getElementById('branchPill').innerHTML = '<i class="fa-solid fa-store"></i> ' + BRANCH_LABEL;
   document.getElementById('finalSubmitBtn').addEventListener('click', finalSubmit);
+  wireBluetoothScanner();
   startCamera();
 });
 
@@ -275,8 +284,11 @@ function startCamera() {
   html5QrCode = new Html5Qrcode('qrReader');
 
   const config = {
-    fps: 12,
-    qrbox: { width: 260, height: 160 },
+    fps: 20,
+    qrbox: { width: 250, height: 140 },
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: true // uses the browser's native, much faster decoder when available
+    },
     formatsToSupport: [
       Html5QrcodeSupportedFormats.EAN_13,
       Html5QrcodeSupportedFormats.EAN_8,
@@ -291,7 +303,7 @@ function startCamera() {
   html5QrCode.start(
     { facingMode: 'environment' },
     config,
-    onDecoded,
+    processScan,
     function onFail() { /* silent — fires continuously while nothing is in frame */ }
   ).then(function () {
     setBanner('Point camera at a barcode...', '');
@@ -300,23 +312,41 @@ function startCamera() {
   });
 }
 
-function onDecoded(decodedText) {
+/**
+ * Called by both the camera decoder and the Bluetooth scanner input.
+ * Instead of firing an API call immediately (which could overlap with a
+ * previous still-in-flight lookup and risk applying results out of order),
+ * every scan is pushed onto a queue and processed one at a time, strictly
+ * in the order they were scanned. This is what guarantees fast scanning
+ * never drops a barcode or mixes up which result belongs to which item.
+ */
+function processScan(decodedText) {
   const now = Date.now();
+  // Only dedupes REPEATS of the exact same code within the cooldown window
+  // (the camera "sees" the same barcode across many frames); different
+  // codes scanned back-to-back are never blocked by this.
   if (decodedText === lastCode && (now - lastCodeTime) < SCAN_COOLDOWN_MS) return;
-  if (lookupBusy) return;
-
   lastCode = decodedText;
   lastCodeTime = now;
-  lookupBusy = true;
-  setBanner('Looking up ' + decodedText + '...', '');
 
-  apiGet({ action: 'getItemByBarcode', code: decodedText, branch: BRANCH_ID })
+  scanQueue.push(decodedText);
+  setBanner('Queued: ' + decodedText + (scanQueue.length > 1 ? '  (' + scanQueue.length + ' waiting)' : ''), '');
+  runQueue();
+}
+
+function runQueue() {
+  if (queueRunning) return;      // already draining the queue
+  if (scanQueue.length === 0) return;
+
+  queueRunning = true;
+  const code = scanQueue.shift();
+  setBanner('Looking up ' + code + '...', '');
+
+  apiGet({ action: 'getItemByBarcode', code: code, branch: BRANCH_ID })
     .then(function (result) {
-      lookupBusy = false;
-
       if (!result.found) {
         playSound('beepError');
-        setBanner('❌ Not found: ' + decodedText, 'err');
+        setBanner('❌ Not found: ' + code, 'err');
         return;
       }
 
@@ -341,10 +371,45 @@ function onDecoded(decodedText) {
       renderList();
     })
     .catch(function (err) {
-      lookupBusy = false;
       playSound('beepError');
       setBanner('Lookup error — check connection.', 'err');
+    })
+    .finally(function () {
+      queueRunning = false;
+      if (scanQueue.length > 0) runQueue(); // immediately process the next queued scan
     });
+}
+
+/* ============================================================================
+   BLUETOOTH BARCODE SCANNER SUPPORT
+   Bluetooth scanners behave like a keyboard: they "type" the barcode into
+   whatever input is focused, then send an Enter keypress automatically.
+   This hidden input stays focused at all times so a Bluetooth scanner
+   works alongside the camera without any extra setup.
+============================================================================ */
+function focusBtInput() {
+  const el = document.getElementById('btScannerInput');
+  if (el) el.focus();
+}
+
+function wireBluetoothScanner() {
+  const btInput = document.getElementById('btScannerInput');
+
+  btInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = btInput.value.trim();
+      btInput.value = '';
+      if (val.length > 0) processScan(val);
+    }
+  });
+
+  // Keep it focused so scans are captured the instant they happen.
+  focusBtInput();
+  document.addEventListener('click', function () {
+    setTimeout(focusBtInput, 50);
+  });
+  window.addEventListener('focus', focusBtInput);
 }
 
 function setBanner(text, cls) {
