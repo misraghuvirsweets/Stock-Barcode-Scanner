@@ -203,7 +203,7 @@
         <thead>
           <tr>
             <th>Item</th>
-            <th>Weight</th>
+            <th>Unit</th>
             <th>Qty</th>
             <th></th>
           </tr>
@@ -255,7 +255,7 @@ const BRANCH_LABEL = BRANCH_LABELS[BRANCH_ID];
 /* ============================================================================
    STATE
 ============================================================================ */
-let scannedItems = [];        // { barcodeCode, itemName, netWeight, dept, countedQty }
+let scannedItems = [];        // { barcodeCode, itemName, alternateUnit, countedQty }
 let html5QrCode = null;
 let lookupBusy = false;
 let lastCode = '';
@@ -351,7 +351,7 @@ function runQueue() {
       }
 
       const item = result.item;
-      const displayName = item.printName || item.productName;
+      const displayName = item.productName;
 
       const existing = scannedItems.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
       if (existing) {
@@ -360,14 +360,13 @@ function runQueue() {
         scannedItems.push({
           barcodeCode: item.userDefinedCode,
           itemName: displayName,
-          netWeight: item.netWeight,
-          dept: item.dept,
+          alternateUnit: item.alternateUnit,
           countedQty: 1
         });
       }
 
       playSound('beepSuccess');
-      setBanner('✅ ' + displayName + (item.netWeight ? ' (' + item.netWeight + ')' : ''), 'ok');
+      setBanner('✅ ' + displayName + (item.alternateUnit ? ' (' + item.alternateUnit + ')' : ''), 'ok');
       renderList();
     })
     .catch(function (err) {
@@ -442,7 +441,7 @@ function renderList() {
     return (
       '<tr>' +
         '<td>' + escapeHtml(entry.itemName) + '</td>' +
-        '<td class="text-muted">' + escapeHtml(entry.netWeight || '-') + '</td>' +
+        '<td class="text-muted">' + escapeHtml(entry.alternateUnit || '-') + '</td>' +
         '<td>' +
           '<span class="qty-adjust">' +
             '<button type="button" onclick="adjustQty(' + idx + ', -1)"><i class="fa-solid fa-minus"></i></button>' +
