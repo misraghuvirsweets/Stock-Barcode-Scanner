@@ -491,6 +491,11 @@ function runQueue() {
       if (!result.found) {
         playSound('beepError');
         setBanner('❌ Not found: ' + code, 'err');
+        if (manualModeActive) {
+          // The "looking up..." placeholder modal is open (from the
+          // Bluetooth Enter keydown) — close it since there's no item.
+          closeQtyModal();
+        }
         return;
       }
 
@@ -552,6 +557,27 @@ function wireQtyModal() {
   });
 }
 
+/**
+ * Opens the qty modal in a "looking up..." placeholder state and grabs
+ * keyboard focus immediately — called synchronously from the Bluetooth
+ * scanner's trusted Enter keydown, BEFORE the barcode lookup API call is
+ * even made, so the on-screen keyboard opens reliably. openQtyModal() is
+ * called again once the lookup resolves, to fill in the real item name.
+ */
+function prepareManualEntryModalForLookup() {
+  holdQueue = true;
+  pendingManualItem = null;
+
+  document.getElementById('qtyModalItemName').textContent = 'Looking up item...';
+  const qtyInput = document.getElementById('qtyModalInput');
+  qtyInput.value = 1;
+
+  blurBtInput();
+  document.getElementById('qtyModalOverlay').classList.add('show');
+  qtyInput.focus({ preventScroll: true });
+  qtyInput.select();
+}
+
 function openQtyModal(item) {
   holdQueue = true;
   pendingManualItem = item;
@@ -571,11 +597,10 @@ function openQtyModal(item) {
   document.getElementById('qtyModalOverlay').classList.add('show');
 
   // Focus + select immediately, then again on the next frame and after a
-  // short delay. Mobile browsers can silently ignore a focus() call that
-  // isn't tied closely enough to a user gesture (the modal opens after an
-  // async barcode lookup finishes, not directly inside a tap handler), so
-  // retrying a couple of times makes the on-screen keyboard open reliably
-  // instead of leaving the user to tap the box manually.
+  // short delay. This covers the camera-scan path (no trusted keyboard
+  // event to piggyback on) as a best effort, and also re-confirms focus
+  // for the Bluetooth path where prepareManualEntryModalForLookup() already
+  // opened the keyboard a moment earlier.
   const tryFocus = function () {
     qtyInput.focus({ preventScroll: true });
     qtyInput.select();
@@ -674,7 +699,19 @@ function wireBluetoothScanner() {
       e.preventDefault();
       const val = btInput.value.trim();
       btInput.value = '';
-      if (val.length > 0) processScan(val);
+      if (val.length > 0) {
+        if (manualModeActive) {
+          // IMPORTANT: this keydown is a trusted, hardware-generated
+          // keyboard event (the Bluetooth scanner "typing" Enter). Focusing
+          // the qty input synchronously, right here, lets mobile browsers
+          // treat it as a direct result of a user/keyboard action and open
+          // the on-screen keyboard immediately — instead of waiting for the
+          // barcode lookup to finish first, by which point the browser may
+          // refuse to auto-open the keyboard.
+          prepareManualEntryModalForLookup();
+        }
+        processScan(val);
+      }
     }
   });
 
