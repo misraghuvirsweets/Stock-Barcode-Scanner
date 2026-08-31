@@ -337,7 +337,7 @@
     <div class="qty-modal-eyebrow">Manual Entry</div>
     <div class="qty-modal-title" id="qtyModalItemName">Item</div>
     <div class="qty-modal-label">Quantity</div>
-    <input type="number" inputmode="decimal" class="qty-modal-input" id="qtyModalInput" min="0" step="any">
+    <input type="number" inputmode="numeric" pattern="[0-9]*" class="qty-modal-input" id="qtyModalInput" min="0" step="any" autofocus autocomplete="off">
     <div class="qty-modal-actions">
       <button type="button" class="qty-modal-cancel" id="qtyModalCancelBtn">Cancel</button>
       <button type="button" class="qty-modal-save" id="qtyModalSaveBtn">Save Entry</button>
@@ -563,12 +563,27 @@ function openQtyModal(item) {
   const qtyInput = document.getElementById('qtyModalInput');
   qtyInput.value = existing ? existing.countedQty : 1;
 
+  // Release the hidden Bluetooth-scanner input FIRST so it isn't still
+  // holding focus (and isn't fighting the qty box for the on-screen
+  // keyboard) before we try to focus the visible qty input.
+  blurBtInput();
+
   document.getElementById('qtyModalOverlay').classList.add('show');
-  blurBtInput(); // don't let the hidden BT-scanner input fight for focus
-  setTimeout(function () {
-    qtyInput.focus();
+
+  // Focus + select immediately, then again on the next frame and after a
+  // short delay. Mobile browsers can silently ignore a focus() call that
+  // isn't tied closely enough to a user gesture (the modal opens after an
+  // async barcode lookup finishes, not directly inside a tap handler), so
+  // retrying a couple of times makes the on-screen keyboard open reliably
+  // instead of leaving the user to tap the box manually.
+  const tryFocus = function () {
+    qtyInput.focus({ preventScroll: true });
     qtyInput.select();
-  }, 50);
+  };
+  tryFocus();
+  requestAnimationFrame(tryFocus);
+  setTimeout(tryFocus, 60);
+  setTimeout(tryFocus, 250);
 
   setBanner('Enter quantity for ' + item.productName + '...', '');
 }
