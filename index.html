@@ -436,9 +436,14 @@ function wireBluetoothScanner() {
   document.addEventListener('click', function (e) {
     const isInteractiveArea = e.target.closest('.list-wrap') || e.target.closest('.bottom-bar');
     if (isInteractiveArea) {
-      // Make sure any keyboard that might already be open gets dismissed,
-      // and don't steal focus back onto the hidden input for this tap.
+      // Dismiss any keyboard that might already be open for this tap...
       blurBtInput();
+      // ...then quietly refocus the hidden input a moment later, so the
+      // Bluetooth scanner is ready again without the user having to tap
+      // somewhere else first. The delay lets the keyboard-close animation
+      // finish before we grab focus back (inputmode="none" also keeps the
+      // keyboard from reopening at that point).
+      setTimeout(focusBtInput, 300);
       return;
     }
     setTimeout(focusBtInput, 50);
