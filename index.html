@@ -248,6 +248,40 @@
     background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
     color:#fff;
   }
+
+  /* ---------- ON-SCREEN QTY KEYPAD ----------
+     Bluetooth scanners register with the OS as a physical keyboard, and
+     once one is connected/active, Android/iOS commonly suppress the
+     on-screen keyboard SYSTEM-WIDE, for every input field, not just the
+     scanner's own hidden input. That's outside what JS focus() tricks can
+     override, so this keypad is a reliable, always-available way to enter
+     the qty without depending on the OS software keyboard at all. */
+  .qty-keypad{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:.5rem;
+    margin-bottom:1rem;
+  }
+  .qty-keypad button{
+    border:1.5px solid #e9dcd2;
+    background:#fbf6f2;
+    color:var(--ink);
+    font-size:1.15rem;
+    font-weight:700;
+    border-radius:10px;
+    padding:.6rem 0;
+  }
+  .qty-keypad button:active{
+    background:var(--brand-orange-light);
+    border-color:var(--brand-orange);
+  }
+  .qty-keypad button.qty-key-clear{
+    color:#dc3545;
+    font-size:.85rem;
+  }
+  .qty-keypad button.qty-key-back{
+    font-size:1rem;
+  }
 </style>
 </head>
 <body>
@@ -338,6 +372,20 @@
     <div class="qty-modal-title" id="qtyModalItemName">Item</div>
     <div class="qty-modal-label">Quantity</div>
     <input type="number" inputmode="numeric" pattern="[0-9]*" class="qty-modal-input" id="qtyModalInput" min="0" step="any" autofocus autocomplete="off">
+    <div class="qty-keypad" id="qtyKeypad">
+      <button type="button" class="qty-key" data-key="1">1</button>
+      <button type="button" class="qty-key" data-key="2">2</button>
+      <button type="button" class="qty-key" data-key="3">3</button>
+      <button type="button" class="qty-key" data-key="4">4</button>
+      <button type="button" class="qty-key" data-key="5">5</button>
+      <button type="button" class="qty-key" data-key="6">6</button>
+      <button type="button" class="qty-key" data-key="7">7</button>
+      <button type="button" class="qty-key" data-key="8">8</button>
+      <button type="button" class="qty-key" data-key="9">9</button>
+      <button type="button" class="qty-key qty-key-clear" data-key="clear">Clear</button>
+      <button type="button" class="qty-key" data-key="0">0</button>
+      <button type="button" class="qty-key qty-key-back" data-key="back"><i class="fa-solid fa-delete-left"></i></button>
+    </div>
     <div class="qty-modal-actions">
       <button type="button" class="qty-modal-cancel" id="qtyModalCancelBtn">Cancel</button>
       <button type="button" class="qty-modal-save" id="qtyModalSaveBtn">Save Entry</button>
@@ -554,6 +602,37 @@ function wireQtyModal() {
       e.preventDefault();
       saveManualQtyEntry();
     }
+  });
+  wireQtyKeypad();
+}
+
+/**
+ * On-screen keypad for entering the qty by tapping instead of typing.
+ * This is the RELIABLE way to enter qty when a Bluetooth scanner is
+ * connected, since the OS commonly hides the software keyboard for every
+ * input field system-wide once a Bluetooth "keyboard" (the scanner) is
+ * active — a restriction JS can't override with focus() calls.
+ */
+function wireQtyKeypad() {
+  const qtyInput = document.getElementById('qtyModalInput');
+  document.getElementById('qtyKeypad').addEventListener('click', function (e) {
+    const btn = e.target.closest('.qty-key');
+    if (!btn) return;
+    const key = btn.getAttribute('data-key');
+
+    if (key === 'clear') {
+      qtyInput.value = '';
+    } else if (key === 'back') {
+      qtyInput.value = qtyInput.value.slice(0, -1);
+    } else {
+      // Treat a starting "0" as replaced by the first real digit typed,
+      // same way most numeric keypads behave.
+      qtyInput.value = (qtyInput.value === '0' || qtyInput.value === '')
+        ? key
+        : qtyInput.value + key;
+    }
+
+    qtyInput.focus({ preventScroll: true });
   });
 }
 
