@@ -371,7 +371,7 @@
     <div class="qty-modal-eyebrow">Manual Entry</div>
     <div class="qty-modal-title" id="qtyModalItemName">Item</div>
     <div class="qty-modal-label">Quantity</div>
-    <input type="number" inputmode="numeric" pattern="[0-9]*" class="qty-modal-input" id="qtyModalInput" min="0" step="any" autofocus autocomplete="off">
+    <input type="text" inputmode="none" class="qty-modal-input" id="qtyModalInput" readonly autocomplete="off">
     <div class="qty-keypad" id="qtyKeypad">
       <button type="button" class="qty-key" data-key="1">1</button>
       <button type="button" class="qty-key" data-key="2">2</button>
@@ -594,15 +594,6 @@ function wireQtyModal() {
     setBanner('Manual entry cancelled.', '');
     closeQtyModal();
   });
-  // Let Enter (from a Bluetooth-scanner-focused hidden input isn't relevant
-  // here, but a physical keyboard's Enter while the qty box itself is
-  // focused) submit the entry too.
-  document.getElementById('qtyModalInput').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveManualQtyEntry();
-    }
-  });
   wireQtyKeypad();
 }
 
@@ -631,30 +622,26 @@ function wireQtyKeypad() {
         ? key
         : qtyInput.value + key;
     }
-
-    qtyInput.focus({ preventScroll: true });
   });
 }
 
 /**
- * Opens the qty modal in a "looking up..." placeholder state and grabs
- * keyboard focus immediately — called synchronously from the Bluetooth
- * scanner's trusted Enter keydown, BEFORE the barcode lookup API call is
- * even made, so the on-screen keyboard opens reliably. openQtyModal() is
- * called again once the lookup resolves, to fill in the real item name.
+ * Opens the qty modal in a "looking up..." placeholder state — called
+ * synchronously from the Bluetooth scanner's Enter keydown, before the
+ * barcode lookup API call is even made, so the popup appears instantly.
+ * The qty box itself is read-only; quantity is entered via the on-screen
+ * keypad only, so there's no dependency on the OS software keyboard at all
+ * (which Bluetooth scanners commonly suppress system-wide).
  */
 function prepareManualEntryModalForLookup() {
   holdQueue = true;
   pendingManualItem = null;
 
   document.getElementById('qtyModalItemName').textContent = 'Looking up item...';
-  const qtyInput = document.getElementById('qtyModalInput');
-  qtyInput.value = 1;
+  document.getElementById('qtyModalInput').value = '1';
 
   blurBtInput();
   document.getElementById('qtyModalOverlay').classList.add('show');
-  qtyInput.focus({ preventScroll: true });
-  qtyInput.select();
 }
 
 function openQtyModal(item) {
@@ -665,31 +652,12 @@ function openQtyModal(item) {
 
   document.getElementById('qtyModalItemName').textContent =
     item.productName + (item.alternateUnit ? ' (' + item.alternateUnit + ')' : '');
-  const qtyInput = document.getElementById('qtyModalInput');
-  qtyInput.value = existing ? existing.countedQty : 1;
+  document.getElementById('qtyModalInput').value = existing ? String(existing.countedQty) : '1';
 
-  // Release the hidden Bluetooth-scanner input FIRST so it isn't still
-  // holding focus (and isn't fighting the qty box for the on-screen
-  // keyboard) before we try to focus the visible qty input.
-  blurBtInput();
-
+  blurBtInput(); // don't let the hidden BT-scanner input fight for focus
   document.getElementById('qtyModalOverlay').classList.add('show');
 
-  // Focus + select immediately, then again on the next frame and after a
-  // short delay. This covers the camera-scan path (no trusted keyboard
-  // event to piggyback on) as a best effort, and also re-confirms focus
-  // for the Bluetooth path where prepareManualEntryModalForLookup() already
-  // opened the keyboard a moment earlier.
-  const tryFocus = function () {
-    qtyInput.focus({ preventScroll: true });
-    qtyInput.select();
-  };
-  tryFocus();
-  requestAnimationFrame(tryFocus);
-  setTimeout(tryFocus, 60);
-  setTimeout(tryFocus, 250);
-
-  setBanner('Enter quantity for ' + item.productName + '...', '');
+  setBanner('Enter quantity for ' + item.productName + ' using the keypad...', '');
 }
 
 function saveManualQtyEntry() {
@@ -699,7 +667,7 @@ function saveManualQtyEntry() {
   const qty = Number(qtyInput.value);
 
   if (qtyInput.value === '' || isNaN(qty) || qty < 0) {
-    qtyInput.focus();
+    setBanner('Enter a valid quantity using the keypad.', 'err');
     return; // keep the modal open until a valid qty is entered
   }
 
