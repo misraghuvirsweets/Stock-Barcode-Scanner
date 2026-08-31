@@ -47,6 +47,22 @@
     padding:.25rem .65rem; border-radius:999px;
   }
 
+  /* ---------- MANUAL ENTRY (header pill button) ---------- */
+  .manual-entry-pill{
+    font-size:.75rem; font-weight:700;
+    padding:.25rem .65rem; border-radius:999px;
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.35);
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .manual-entry-pill.active{
+    background:#fff;
+    color:var(--brand-crimson-dark);
+    border-color:#fff;
+  }
+
   .config-banner{
     background:#fff3cd; border-bottom:1px solid #ffe69c; color:#664d03;
     padding:.5rem 1rem; font-size:.8rem; text-align:center; display:none;
@@ -161,6 +177,77 @@
     white-space:nowrap;
   }
   .btn-final-submit:disabled{ opacity:.5; }
+
+  /* ---------- MANUAL QTY MODAL ---------- */
+  .qty-modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(30,15,10,.55);
+    z-index:2000;
+    align-items:center;
+    justify-content:center;
+    padding:1rem;
+  }
+  .qty-modal-overlay.show{ display:flex; }
+  .qty-modal-box{
+    background:#fff;
+    border-radius:16px;
+    width:100%;
+    max-width:320px;
+    padding:1.25rem 1.1rem 1.1rem;
+    box-shadow:0 12px 32px rgba(0,0,0,.25);
+  }
+  .qty-modal-eyebrow{
+    font-size:.7rem;
+    font-weight:800;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    color:var(--brand-orange);
+    margin-bottom:.15rem;
+  }
+  .qty-modal-title{
+    font-size:1.05rem;
+    font-weight:700;
+    color:var(--ink);
+    margin-bottom:.9rem;
+    line-height:1.3;
+  }
+  .qty-modal-label{
+    font-size:.78rem;
+    font-weight:700;
+    color:#8a7268;
+    margin-bottom:.3rem;
+  }
+  .qty-modal-input{
+    width:100%;
+    font-size:1.3rem;
+    font-weight:700;
+    text-align:center;
+    padding:.5rem;
+    border:1.5px solid #e9dcd2;
+    border-radius:10px;
+    margin-bottom:1rem;
+  }
+  .qty-modal-actions{
+    display:flex;
+    gap:.6rem;
+  }
+  .qty-modal-actions button{
+    flex:1;
+    border-radius:9px;
+    font-weight:700;
+    font-size:.85rem;
+    padding:.55rem .5rem;
+    border:none;
+  }
+  .qty-modal-cancel{
+    background:#f3ece7;
+    color:#7d6a60;
+  }
+  .qty-modal-save{
+    background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
+    color:#fff;
+  }
 </style>
 </head>
 <body>
@@ -189,6 +276,9 @@
   <span class="brand-name">Raghuvir Stock Scan</span>
   <span class="branch-pill" id="branchPill"><i class="fa-solid fa-store"></i> --</span>
   <span class="branch-pill" style="margin-left:.35rem; background:rgba(255,255,255,.1);"><i class="fa-brands fa-bluetooth-b"></i> Ready</span>
+  <button type="button" class="manual-entry-pill" id="manualEntryBtn" style="margin-left:.35rem;">
+    <i class="fa-solid fa-pen"></i> Manual
+  </button>
 </div>
 
 <!-- ===================== CAMERA (always live) ===================== -->
@@ -241,6 +331,20 @@
   <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
 </audio>
 
+<!-- ===================== MANUAL ENTRY QTY MODAL ===================== -->
+<div class="qty-modal-overlay" id="qtyModalOverlay">
+  <div class="qty-modal-box">
+    <div class="qty-modal-eyebrow">Manual Entry</div>
+    <div class="qty-modal-title" id="qtyModalItemName">Item</div>
+    <div class="qty-modal-label">Quantity</div>
+    <input type="number" inputmode="decimal" class="qty-modal-input" id="qtyModalInput" min="0" step="any">
+    <div class="qty-modal-actions">
+      <button type="button" class="qty-modal-cancel" id="qtyModalCancelBtn">Cancel</button>
+      <button type="button" class="qty-modal-save" id="qtyModalSaveBtn">Save Entry</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================================
    ⚠️ REQUIRED CONFIG — paste your deployed Apps Script Web App URL here.
@@ -272,6 +376,18 @@ const SCAN_COOLDOWN_MS = 600; // faster repeat-scan of the same item, still avoi
 let scanQueue = [];           // holds barcodes waiting to be looked up, in arrival order
 let queueRunning = false;     // true while the queue worker is processing
 
+/* ---------------------------------------------------------------------------
+   MANUAL ENTRY MODE
+   When ON, a successful barcode lookup (camera OR Bluetooth scanner) opens
+   a small qty prompt instead of auto-adding the item with qty 1. The queue
+   worker is "held" while the prompt is open, so any barcodes scanned while
+   you're typing the qty just wait their turn instead of being lost or
+   processed out of order.
+--------------------------------------------------------------------------- */
+let manualModeActive = false;
+let pendingManualItem = null;  // the looked-up item currently shown in the modal
+let holdQueue = false;         // true while the qty modal is open
+
 /* ============================================================================
    INIT
 ============================================================================ */
@@ -281,9 +397,29 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   document.getElementById('branchPill').innerHTML = '<i class="fa-solid fa-store"></i> ' + BRANCH_LABEL;
   document.getElementById('finalSubmitBtn').addEventListener('click', finalSubmit);
+  wireManualEntryToggle();
+  wireQtyModal();
   wireBluetoothScanner();
   startCamera();
 });
+
+/* ============================================================================
+   MANUAL ENTRY TOGGLE
+============================================================================ */
+function wireManualEntryToggle() {
+  const btn = document.getElementById('manualEntryBtn');
+  btn.addEventListener('click', function () {
+    manualModeActive = !manualModeActive;
+    btn.classList.toggle('active', manualModeActive);
+    btn.innerHTML = manualModeActive
+      ? '<i class="fa-solid fa-pen"></i> Manual: ON'
+      : '<i class="fa-solid fa-pen"></i> Manual';
+    setBanner(
+      manualModeActive ? 'Manual Entry ON — scan a barcode to enter its qty...' : 'Point camera at a barcode...',
+      ''
+    );
+  });
+}
 
 /* ============================================================================
    CAMERA — starts automatically, stays live, scans continuously
@@ -361,6 +497,14 @@ function runQueue() {
       const item = result.item;
       const displayName = item.productName;
 
+      if (manualModeActive) {
+        // Manual Entry mode: don't auto-add — pop the qty prompt and let
+        // the queue worker pause until the user saves or cancels it.
+        playSound('beepSuccess');
+        openQtyModal(item);
+        return;
+      }
+
       const existing = scannedItems.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
       if (existing) {
         existing.countedQty += 1;
@@ -382,9 +526,100 @@ function runQueue() {
       setBanner('Lookup error — check connection.', 'err');
     })
     .finally(function () {
+      if (holdQueue) return; // qty modal is open — resumed by closeQtyModal()
       queueRunning = false;
       if (scanQueue.length > 0) runQueue(); // immediately process the next queued scan
     });
+}
+
+/* ============================================================================
+   MANUAL ENTRY QTY MODAL
+============================================================================ */
+function wireQtyModal() {
+  document.getElementById('qtyModalSaveBtn').addEventListener('click', saveManualQtyEntry);
+  document.getElementById('qtyModalCancelBtn').addEventListener('click', function () {
+    setBanner('Manual entry cancelled.', '');
+    closeQtyModal();
+  });
+  // Let Enter (from a Bluetooth-scanner-focused hidden input isn't relevant
+  // here, but a physical keyboard's Enter while the qty box itself is
+  // focused) submit the entry too.
+  document.getElementById('qtyModalInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveManualQtyEntry();
+    }
+  });
+}
+
+function openQtyModal(item) {
+  holdQueue = true;
+  pendingManualItem = item;
+
+  const existing = scannedItems.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
+
+  document.getElementById('qtyModalItemName').textContent =
+    item.productName + (item.alternateUnit ? ' (' + item.alternateUnit + ')' : '');
+  const qtyInput = document.getElementById('qtyModalInput');
+  qtyInput.value = existing ? existing.countedQty : 1;
+
+  document.getElementById('qtyModalOverlay').classList.add('show');
+  blurBtInput(); // don't let the hidden BT-scanner input fight for focus
+  setTimeout(function () {
+    qtyInput.focus();
+    qtyInput.select();
+  }, 50);
+
+  setBanner('Enter quantity for ' + item.productName + '...', '');
+}
+
+function saveManualQtyEntry() {
+  if (!pendingManualItem) { closeQtyModal(); return; }
+
+  const qtyInput = document.getElementById('qtyModalInput');
+  const qty = Number(qtyInput.value);
+
+  if (qtyInput.value === '' || isNaN(qty) || qty < 0) {
+    qtyInput.focus();
+    return; // keep the modal open until a valid qty is entered
+  }
+
+  const item = pendingManualItem;
+  const existing = scannedItems.find(function (e) { return e.barcodeCode === item.userDefinedCode; });
+  if (existing) {
+    existing.countedQty = qty;
+  } else {
+    scannedItems.push({
+      barcodeCode: item.userDefinedCode,
+      itemName: item.productName,
+      alternateUnit: item.alternateUnit,
+      countedQty: qty
+    });
+  }
+
+  playSound('beepSuccess');
+  setBanner('✅ Saved ' + qty + ' x ' + item.productName, 'ok');
+  renderList();
+  closeQtyModal();
+}
+
+function closeQtyModal() {
+  document.getElementById('qtyModalOverlay').classList.remove('show');
+  pendingManualItem = null;
+  holdQueue = false;
+
+  // Resume the scan queue in case more barcodes were scanned while the
+  // modal was open.
+  queueRunning = false;
+  if (scanQueue.length > 0) {
+    runQueue();
+  } else if (manualModeActive) {
+    setBanner('Manual Entry ON — scan a barcode to enter its qty...', '');
+  } else {
+    setBanner('Point camera at a barcode...', '');
+  }
+
+  setTimeout(focusBtInput, 100);
 }
 
 /* ============================================================================
@@ -434,7 +669,7 @@ function wireBluetoothScanner() {
   focusBtInput();
 
   document.addEventListener('click', function (e) {
-    const isInteractiveArea = e.target.closest('.list-wrap') || e.target.closest('.bottom-bar');
+    const isInteractiveArea = e.target.closest('.list-wrap') || e.target.closest('.bottom-bar') || e.target.closest('.qty-modal-overlay') || e.target.closest('#manualEntryBtn');
     if (isInteractiveArea) {
       // Dismiss any keyboard that might already be open for this tap...
       blurBtInput();
