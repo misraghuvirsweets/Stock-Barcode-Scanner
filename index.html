@@ -172,8 +172,16 @@
 
 <!-- Hidden input that stays focused to receive Bluetooth barcode scanner
      input (Bluetooth scanners act like a keyboard: they type the code then
-     press Enter automatically). Invisible, but functionally always ready. -->
-<input type="text" id="btScannerInput" autocomplete="off" style="position:fixed; top:-1000px; left:-1000px; opacity:0;">
+     press Enter automatically). Invisible, but functionally always ready.
+
+     FIX: inputmode="none" + enterkeyhint tell mobile/touch browsers not to
+     pop up the on-screen keyboard when this input gets focus, while still
+     allowing a real (physical/Bluetooth) keyboard/scanner to type into it.
+     autofocus/readonly are intentionally NOT used, since readonly would
+     block a physical scanner from typing into it. -->
+<input type="text" id="btScannerInput" autocomplete="off" autocorrect="off" autocapitalize="off"
+       spellcheck="false" inputmode="none" enterkeyhint="done"
+       style="position:fixed; top:-1000px; left:-1000px; opacity:0;">
 
 <!-- ===================== HEADER ===================== -->
 <div class="app-header">
@@ -385,10 +393,27 @@ function runQueue() {
    whatever input is focused, then send an Enter keypress automatically.
    This hidden input stays focused at all times so a Bluetooth scanner
    works alongside the camera without any extra setup.
+
+   FIX: previously the page refocused this hidden input after EVERY click
+   anywhere on the page — including taps on the qty +/- buttons, the
+   remove button, and the Submit button. On mobile/touch devices, focusing
+   a text input opens the on-screen keyboard, so those buttons appeared to
+   "always open the keyboard". Now:
+     1. The input has inputmode="none" so mobile browsers don't show a
+        virtual keyboard for it at all (external/Bluetooth keyboards still
+        work fine, since inputmode only affects the on-screen keyboard).
+     2. The auto-refocus-on-click logic skips clicks that happen inside the
+        scanned-items list or the bottom bar, so tapping qty/remove/submit
+        never re-triggers focus games on that input.
 ============================================================================ */
 function focusBtInput() {
   const el = document.getElementById('btScannerInput');
-  if (el) el.focus();
+  if (el) el.focus({ preventScroll: true });
+}
+
+function blurBtInput() {
+  const el = document.getElementById('btScannerInput');
+  if (el) el.blur();
 }
 
 function wireBluetoothScanner() {
@@ -403,12 +428,28 @@ function wireBluetoothScanner() {
     }
   });
 
-  // Keep it focused so scans are captured the instant they happen.
+  // Keep it focused so scans are captured the instant they happen — but
+  // NOT when the user is interacting with on-page controls (qty buttons,
+  // remove, submit), since focusing a text input pops the mobile keyboard.
   focusBtInput();
-  document.addEventListener('click', function () {
+
+  document.addEventListener('click', function (e) {
+    const isInteractiveArea = e.target.closest('.list-wrap') || e.target.closest('.bottom-bar');
+    if (isInteractiveArea) {
+      // Make sure any keyboard that might already be open gets dismissed,
+      // and don't steal focus back onto the hidden input for this tap.
+      blurBtInput();
+      return;
+    }
     setTimeout(focusBtInput, 50);
   });
-  window.addEventListener('focus', focusBtInput);
+
+  window.addEventListener('focus', function () {
+    // Don't yank focus back if the user is actively using a button/control.
+    const active = document.activeElement;
+    if (active && (active.closest('.list-wrap') || active.closest('.bottom-bar'))) return;
+    focusBtInput();
+  });
 }
 
 function setBanner(text, cls) {
@@ -444,12 +485,12 @@ function renderList() {
         '<td class="text-muted">' + escapeHtml(entry.alternateUnit || '-') + '</td>' +
         '<td>' +
           '<span class="qty-adjust">' +
-            '<button type="button" onclick="adjustQty(' + idx + ', -1)"><i class="fa-solid fa-minus"></i></button>' +
+            '<button type="button" tabindex="-1" onclick="adjustQty(' + idx + ', -1)"><i class="fa-solid fa-minus"></i></button>' +
             '<span class="fw-semibold">' + escapeHtml(String(entry.countedQty)) + '</span>' +
-            '<button type="button" onclick="adjustQty(' + idx + ', 1)"><i class="fa-solid fa-plus"></i></button>' +
+            '<button type="button" tabindex="-1" onclick="adjustQty(' + idx + ', 1)"><i class="fa-solid fa-plus"></i></button>' +
           '</span>' +
         '</td>' +
-        '<td><button class="remove-btn" onclick="removeItem(' + idx + ')" title="Remove"><i class="fa-solid fa-trash"></i></button></td>' +
+        '<td><button class="remove-btn" tabindex="-1" onclick="removeItem(' + idx + ')" title="Remove"><i class="fa-solid fa-trash"></i></button></td>' +
       '</tr>'
     );
   }).join('');
