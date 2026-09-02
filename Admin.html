@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raghuvir Sweets And Bakers | Admin Dashboard</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+  :root{
+    --brand-crimson:#a5192a;
+    --brand-crimson-dark:#7d1220;
+    --brand-orange:#f5871f;
+    --brand-orange-light:#fff3e6;
+    --bg-soft:#faf7f5;
+    --ink:#2b2320;
+  }
+  * { box-sizing:border-box; }
+  body{
+    background:var(--bg-soft);
+    color:var(--ink);
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    padding-bottom:2rem;
+  }
+
+  /* ---------- HEADER ---------- */
+  .app-header{
+    background:linear-gradient(90deg, var(--brand-crimson) 0%, var(--brand-crimson-dark) 100%);
+    color:#fff;
+    padding:.7rem 1rem;
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    flex-wrap:wrap;
+  }
+  .app-header .brand-logo{
+    height:38px; width:38px; object-fit:contain; border-radius:8px; background:#fff; padding:2px;
+  }
+  .app-header .brand-name{ font-weight:700; font-size:1rem; line-height:1.1; }
+  .header-right{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    flex-wrap:wrap;
+  }
+  .header-select{
+    background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.4);
+    color:#fff;
+    font-size:.8rem;
+    font-weight:600;
+    padding:.35rem .5rem;
+    border-radius:8px;
+  }
+  .header-select option{ color:#2b2320; }
+  .scan-page-link{
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.4);
+    color:#fff;
+    font-size:.8rem;
+    font-weight:700;
+    padding:.35rem .7rem;
+    border-radius:8px;
+    text-decoration:none;
+  }
+  .scan-page-link:hover{ background:rgba(255,255,255,.25); color:#fff; }
+
+  /* ---------- CONTENT WRAP ---------- */
+  .content-wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:1rem .9rem 0;
+  }
+
+  /* ---------- SUMMARY CARDS ---------- */
+  .summary-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:.8rem;
+    margin-bottom:1rem;
+  }
+  .summary-card{
+    background:#fff;
+    border:1px solid #eee0d8;
+    border-radius:14px;
+    padding:1rem 1.1rem;
+    box-shadow:0 2px 10px rgba(165,25,42,.06);
+  }
+  .summary-card .label{
+    font-size:.72rem;
+    font-weight:800;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+    color:#a99184;
+    margin-bottom:.3rem;
+  }
+  .summary-card .value{
+    font-size:1.55rem;
+    font-weight:800;
+    color:var(--brand-crimson-dark);
+  }
+  .summary-card .value small{
+    font-size:.9rem;
+    font-weight:600;
+    color:#a99184;
+  }
+  .summary-card.total .value{ color:var(--brand-crimson); }
+
+  /* ---------- ADD ENTRY BUTTON ---------- */
+  .add-entry-bar{
+    display:flex;
+    justify-content:flex-end;
+    margin-bottom:.8rem;
+  }
+  .btn-add-entry{
+    background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark));
+    border:none;
+    color:#fff;
+    font-weight:700;
+    font-size:.85rem;
+    padding:.55rem 1.1rem;
+    border-radius:10px;
+  }
+
+  /* ---------- DEPARTMENT TABLE ---------- */
+  .dept-card{
+    background:#fff;
+    border-radius:14px;
+    border:1px solid #eee0d8;
+    box-shadow:0 2px 10px rgba(165,25,42,.06);
+    margin-bottom:1.5rem;
+    overflow:hidden;
+  }
+  .dept-card-header{
+    padding:.8rem 1rem;
+    border-bottom:1px solid #f1e5dc;
+    font-weight:700;
+    font-size:.95rem;
+  }
+  .dept-table{ margin-bottom:0; width:100%; }
+  .dept-table thead th{
+    background:#f6ede6;
+    color:var(--brand-crimson-dark);
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    border:none;
+    padding:.65rem 1rem;
+  }
+  .dept-table tbody td{
+    font-size:.92rem;
+    vertical-align:middle;
+    padding:.6rem 1rem;
+  }
+  .dept-bar-track{
+    background:#f3ece7;
+    border-radius:999px;
+    height:6px;
+    width:100%;
+    overflow:hidden;
+    margin-top:.25rem;
+  }
+  .dept-bar-fill{
+    background:linear-gradient(90deg, var(--brand-orange), var(--brand-crimson));
+    height:100%;
+    border-radius:999px;
+  }
+  .empty-state{
+    text-align:center;
+    color:#a99184;
+    padding:2rem 1rem;
+    font-size:.9rem;
+  }
+  .loading-state{
+    text-align:center;
+    color:#a99184;
+    padding:2rem 1rem;
+    font-size:.9rem;
+  }
+
+  /* ---------- ADD ENTRY MODAL ---------- */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(30,15,10,.55);
+    z-index:2000;
+    align-items:center;
+    justify-content:center;
+    padding:1rem;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:#fff;
+    border-radius:16px;
+    width:100%;
+    max-width:420px;
+    padding:1.25rem 1.1rem 1.1rem;
+    box-shadow:0 12px 32px rgba(0,0,0,.25);
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .modal-eyebrow{
+    font-size:.7rem;
+    font-weight:800;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    color:var(--brand-orange);
+    margin-bottom:.3rem;
+  }
+  .modal-title{
+    font-size:1.1rem;
+    font-weight:700;
+    color:var(--ink);
+    margin-bottom:1rem;
+  }
+  .form-label-sm{
+    font-size:.78rem;
+    font-weight:700;
+    color:#8a7268;
+    margin-bottom:.3rem;
+    display:block;
+  }
+  .item-search-results{
+    border:1px solid #e9dcd2;
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    max-height:180px;
+    overflow-y:auto;
+    display:none;
+  }
+  .item-search-results.show{ display:block; }
+  .item-search-results .result-row{
+    padding:.5rem .7rem;
+    font-size:.85rem;
+    border-bottom:1px solid #f1e5dc;
+    cursor:pointer;
+  }
+  .item-search-results .result-row:hover{ background:var(--brand-orange-light); }
+  .selected-item-box{
+    background:var(--brand-orange-light);
+    border:1px solid #f0d3b8;
+    border-radius:10px;
+    padding:.6rem .8rem;
+    font-size:.85rem;
+    margin-bottom:.9rem;
+    display:none;
+  }
+  .selected-item-box.show{ display:block; }
+  .modal-actions{
+    display:flex;
+    gap:.6rem;
+    margin-top:.3rem;
+  }
+  .modal-actions button{
+    flex:1;
+    border-radius:9px;
+    font-weight:700;
+    font-size:.85rem;
+    padding:.6rem .5rem;
+    border:none;
+  }
+  .modal-cancel{ background:#f3ece7; color:#7d6a60; }
+  .modal-save{ background:linear-gradient(90deg, var(--brand-crimson), var(--brand-crimson-dark)); color:#fff; }
+  .modal-save:disabled{ opacity:.5; }
+  .modal-msg{
+    font-size:.8rem;
+    font-weight:600;
+    margin-top:.6rem;
+    display:none;
+  }
+  .modal-msg.show{ display:block; }
+  .modal-msg.ok{ color:#1fa04a; }
+  .modal-msg.err{ color:#dc3545; }
+</style>
+</head>
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<div class="app-header">
+  <img class="brand-logo" src="https://lh3.googleusercontent.com/d/18aiuiSN9uj-mJtOkGB1rNt4GP6yUbvuO" alt="Logo" onerror="this.style.display='none'">
+  <span class="brand-name">Admin Dashboard</span>
+  <div class="header-right">
+    <select class="header-select" id="branchSelect">
+      <option value="BR1">Branch 1</option>
+      <option value="BR2">Branch 2</option>
+    </select>
+    <select class="header-select" id="monthSelect">
+      <option value="all">All Time</option>
+    </select>
+    <a class="scan-page-link" href="index.html"><i class="fa-solid fa-barcode"></i> Scan Page</a>
+  </div>
+</div>
+
+<div class="content-wrap">
+
+  <!-- ===================== SUMMARY CARDS ===================== -->
+  <div class="summary-row">
+    <div class="summary-card total">
+      <div class="label">Total Valuation</div>
+      <div class="value" id="totalValuationVal">₹0</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Qty Counted</div>
+      <div class="value" id="totalQtyVal">0</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Entries Logged</div>
+      <div class="value" id="totalEntriesVal">0</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Departments</div>
+      <div class="value" id="totalDeptsVal">0</div>
+    </div>
+  </div>
+
+  <!-- ===================== ADD ENTRY BUTTON ===================== -->
+  <div class="add-entry-bar">
+    <button type="button" class="btn-add-entry" id="openAddEntryBtn">
+      <i class="fa-solid fa-plus"></i> Add Entry
+    </button>
+  </div>
+
+  <!-- ===================== DEPARTMENT-WISE TABLE ===================== -->
+  <div class="dept-card">
+    <div class="dept-card-header">
+      <i class="fa-solid fa-layer-group"></i> Department-wise Stock &amp; Valuation
+    </div>
+    <div id="deptTableWrap">
+      <div class="loading-state" id="deptLoadingState">Loading dashboard data...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== ADD ENTRY MODAL ===================== -->
+<div class="modal-overlay" id="addEntryOverlay">
+  <div class="modal-box">
+    <div class="modal-eyebrow">Admin</div>
+    <div class="modal-title">Add Stock Entry</div>
+
+    <label class="form-label-sm">Branch</label>
+    <select class="form-select mb-3" id="entryBranchSelect">
+      <option value="BR1">Branch 1</option>
+      <option value="BR2">Branch 2</option>
+    </select>
+
+    <label class="form-label-sm">Search Item (name or barcode)</label>
+    <input type="text" class="form-control mb-0" id="itemSearchInput" placeholder="Start typing an item name or code...">
+    <div class="item-search-results" id="itemSearchResults"></div>
+
+    <div class="selected-item-box" id="selectedItemBox"></div>
+
+    <label class="form-label-sm mt-2">Quantity</label>
+    <input type="number" class="form-control mb-3" id="entryQtyInput" min="0" step="any" placeholder="Enter quantity">
+
+    <label class="form-label-sm">Remarks (optional)</label>
+    <input type="text" class="form-control mb-3" id="entryRemarksInput" placeholder="Optional note">
+
+    <div class="modal-actions">
+      <button type="button" class="modal-cancel" id="addEntryCancelBtn">Cancel</button>
+      <button type="button" class="modal-save" id="addEntrySaveBtn" disabled>Save Entry</button>
+    </div>
+    <div class="modal-msg" id="addEntryMsg"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   ⚠️ REQUIRED CONFIG — same Apps Script Web App URL as the scan page.
+============================================================================ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec';
+
+const BRANCH_LABELS = { BR1: 'Branch 1', BR2: 'Branch 2' };
+
+/* ============================================================================
+   STATE
+============================================================================ */
+let currentBranch = 'BR1';
+let currentMonth = 'all';
+let itemPickList = [];      // cached full item list for the Add Entry search
+let selectedItem = null;    // the item chosen in the Add Entry modal
+
+/* ============================================================================
+   INIT
+============================================================================ */
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('branchSelect').addEventListener('change', function (e) {
+    currentBranch = e.target.value;
+    loadMonths().then(loadDashboard);
+  });
+  document.getElementById('monthSelect').addEventListener('change', function (e) {
+    currentMonth = e.target.value;
+    loadDashboard();
+  });
+
+  wireAddEntryModal();
+  loadMonths().then(loadDashboard);
+});
+
+/* ============================================================================
+   MONTH DROPDOWN
+============================================================================ */
+function loadMonths() {
+  return apiGet({ action: 'getAvailableMonths', branch: currentBranch })
+    .then(function (months) {
+      const sel = document.getElementById('monthSelect');
+      const prev = currentMonth;
+      sel.innerHTML = '<option value="all">All Time</option>';
+      (months || []).forEach(function (m) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = formatMonthLabel(m);
+        sel.appendChild(opt);
+      });
+      // Keep previous selection if it still exists, else default to the
+      // most recent month (first in the sorted list) or 'all'.
+      if (Array.from(sel.options).some(function (o) { return o.value === prev; })) {
+        sel.value = prev;
+        currentMonth = prev;
+      } else if (months && months.length > 0) {
+        sel.value = months[0];
+        currentMonth = months[0];
+      } else {
+        sel.value = 'all';
+        currentMonth = 'all';
+      }
+    })
+    .catch(function () { /* leave dropdown as-is on error */ });
+}
+
+function formatMonthLabel(yyyyMM) {
+  const parts = yyyyMM.split('-');
+  if (parts.length !== 2) return yyyyMM;
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const idx = parseInt(parts[1], 10) - 1;
+  return (names[idx] || parts[1]) + ' ' + parts[0];
+}
+
+/* ============================================================================
+   DASHBOARD DATA
+============================================================================ */
+function loadDashboard() {
+  document.getElementById('deptTableWrap').innerHTML =
+    '<div class="loading-state">Loading dashboard data...</div>';
+
+  apiGet({ action: 'getDashboardData', branch: currentBranch, month: currentMonth })
+    .then(renderDashboard)
+    .catch(function (err) {
+      document.getElementById('deptTableWrap').innerHTML =
+        '<div class="empty-state">Could not load dashboard data. ' + escapeHtml(err.message || '') + '</div>';
+    });
+}
+
+function renderDashboard(data) {
+  const totalValuation = Number(data.totalValuation) || 0;
+  const totalQty = Number(data.totalQty) || 0;
+  const entryCount = Number(data.entryCount) || 0;
+  const depts = data.deptBreakdown || [];
+
+  document.getElementById('totalValuationVal').textContent = formatCurrency(totalValuation);
+  document.getElementById('totalQtyVal').textContent = formatNumber(totalQty);
+  document.getElementById('totalEntriesVal').textContent = formatNumber(entryCount);
+  document.getElementById('totalDeptsVal').textContent = formatNumber(depts.length);
+
+  const wrap = document.getElementById('deptTableWrap');
+
+  if (depts.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">No stock entries found for this selection.</div>';
+    return;
+  }
+
+  const maxValuation = Math.max.apply(null, depts.map(function (d) { return d.totalValuation; }).concat([1]));
+
+  const rows = depts.map(function (d) {
+    const pct = maxValuation > 0 ? Math.round((d.totalValuation / maxValuation) * 100) : 0;
+    return (
+      '<tr>' +
+        '<td>' +
+          '<div class="fw-semibold">' + escapeHtml(d.dept) + '</div>' +
+          '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '</td>' +
+        '<td>' + formatNumber(d.totalQty) + '</td>' +
+        '<td>' + formatCurrency(d.totalValuation) + '</td>' +
+        '<td>' + formatNumber(d.entryCount) + '</td>' +
+      '</tr>'
+    );
+  }).join('');
+
+  wrap.innerHTML =
+    '<div class="table-responsive">' +
+      '<table class="table dept-table">' +
+        '<thead><tr><th>Department</th><th>Qty</th><th>Valuation</th><th>Entries</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+    '</div>';
+}
+
+/* ============================================================================
+   ADD ENTRY MODAL
+============================================================================ */
+function wireAddEntryModal() {
+  document.getElementById('openAddEntryBtn').addEventListener('click', openAddEntryModal);
+  document.getElementById('addEntryCancelBtn').addEventListener('click', closeAddEntryModal);
+
+  document.getElementById('entryBranchSelect').addEventListener('change', function (e) {
+    // Branch changed inside the modal — clear any item already picked,
+    // since Stock_Logs are per-branch (Item_Master itself is shared).
+  });
+
+  const searchInput = document.getElementById('itemSearchInput');
+  searchInput.addEventListener('input', function () {
+    renderItemSearchResults(searchInput.value);
+  });
+  searchInput.addEventListener('focus', function () {
+    renderItemSearchResults(searchInput.value);
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#itemSearchInput') && !e.target.closest('#itemSearchResults')) {
+      document.getElementById('itemSearchResults').classList.remove('show');
+    }
+  });
+
+  document.getElementById('entryQtyInput').addEventListener('input', updateSaveButtonState);
+
+  document.getElementById('addEntrySaveBtn').addEventListener('click', submitAdminAddEntry);
+}
+
+function openAddEntryModal() {
+  document.getElementById('entryBranchSelect').value = currentBranch;
+  document.getElementById('itemSearchInput').value = '';
+  document.getElementById('entryQtyInput').value = '';
+  document.getElementById('entryRemarksInput').value = '';
+  document.getElementById('selectedItemBox').classList.remove('show');
+  document.getElementById('itemSearchResults').classList.remove('show');
+  hideModalMsg();
+  selectedItem = null;
+  updateSaveButtonState();
+
+  document.getElementById('addEntryOverlay').classList.add('show');
+
+  if (itemPickList.length === 0) {
+    apiGet({ action: 'getItemList' })
+      .then(function (list) { itemPickList = list || []; })
+      .catch(function () { itemPickList = []; });
+  }
+}
+
+function closeAddEntryModal() {
+  document.getElementById('addEntryOverlay').classList.remove('show');
+  selectedItem = null;
+}
+
+function renderItemSearchResults(query) {
+  const resultsBox = document.getElementById('itemSearchResults');
+  const q = (query || '').trim().toLowerCase();
+
+  if (!q) { resultsBox.classList.remove('show'); return; }
+
+  const matches = itemPickList.filter(function (it) {
+    const name = String(it.printName || '').toLowerCase();
+    const code = String(it.code || '').toLowerCase();
+    return name.indexOf(q) !== -1 || code.indexOf(q) !== -1;
+  }).slice(0, 20);
+
+  if (matches.length === 0) {
+    resultsBox.innerHTML = '<div class="result-row text-muted">No items match "' + escapeHtml(query) + '"</div>';
+    resultsBox.classList.add('show');
+    return;
+  }
+
+  resultsBox.innerHTML = matches.map(function (it, idx) {
+    return '<div class="result-row" data-idx="' + idx + '">' +
+      escapeHtml(it.printName || '(unnamed item)') +
+      ' <span class="text-muted">— ' + escapeHtml(it.code || '') + '</span>' +
+      '</div>';
+  }).join('');
+  resultsBox.classList.add('show');
+
+  Array.prototype.forEach.call(resultsBox.querySelectorAll('.result-row'), function (row) {
+    row.addEventListener('click', function () {
+      const idx = Number(row.getAttribute('data-idx'));
+      if (isNaN(idx) || !matches[idx]) return;
+      selectItemForEntry(matches[idx]);
+    });
+  });
+}
+
+function selectItemForEntry(item) {
+  selectedItem = item;
+  document.getElementById('itemSearchInput').value = item.printName || '';
+  document.getElementById('itemSearchResults').classList.remove('show');
+
+  const box = document.getElementById('selectedItemBox');
+  box.innerHTML =
+    '<strong>' + escapeHtml(item.printName || '(unnamed item)') + '</strong><br>' +
+    '<span class="text-muted">Barcode: ' + escapeHtml(item.code || '-') + '</span>';
+  box.classList.add('show');
+
+  updateSaveButtonState();
+}
+
+function updateSaveButtonState() {
+  const qty = Number(document.getElementById('entryQtyInput').value);
+  const valid = selectedItem && document.getElementById('entryQtyInput').value !== '' && !isNaN(qty) && qty >= 0;
+  document.getElementById('addEntrySaveBtn').disabled = !valid;
+}
+
+function submitAdminAddEntry() {
+  if (!selectedItem) return;
+
+  const branchId = document.getElementById('entryBranchSelect').value;
+  const qty = Number(document.getElementById('entryQtyInput').value);
+  const remarks = document.getElementById('entryRemarksInput').value.trim();
+
+  if (isNaN(qty) || qty < 0) {
+    showModalMsg('Enter a valid quantity.', 'err');
+    return;
+  }
+
+  const saveBtn = document.getElementById('addEntrySaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  apiPost({
+    action: 'adminAddEntry',
+    data: {
+      branchId: branchId,
+      barcodeCode: selectedItem.code,
+      qty: qty,
+      operatorName: 'Admin',
+      remarks: remarks
+    }
+  }).then(function (result) {
+    saveBtn.innerHTML = 'Save Entry';
+    if (result.success) {
+      showModalMsg('Saved successfully.', 'ok');
+      setTimeout(function () {
+        closeAddEntryModal();
+        if (branchId === currentBranch) {
+          loadMonths().then(loadDashboard);
+        }
+      }, 700);
+    } else {
+      showModalMsg(result.message || 'Save failed.', 'err');
+      saveBtn.disabled = false;
+    }
+  }).catch(function (err) {
+    saveBtn.innerHTML = 'Save Entry';
+    showModalMsg('Error: ' + err.message, 'err');
+    saveBtn.disabled = false;
+  });
+}
+
+function showModalMsg(text, cls) {
+  const el = document.getElementById('addEntryMsg');
+  el.textContent = text;
+  el.className = 'modal-msg show ' + cls;
+}
+function hideModalMsg() {
+  const el = document.getElementById('addEntryMsg');
+  el.className = 'modal-msg';
+  el.textContent = '';
+}
+
+/* ============================================================================
+   API HELPERS (same pattern as index.html)
+============================================================================ */
+function apiGet(params) {
+  const query = new URLSearchParams(params).toString();
+  return fetch(APPS_SCRIPT_URL + '?' + query, { method: 'GET' })
+    .then(function (res) { return res.text(); })
+    .then(function (text) {
+      try { return JSON.parse(text); }
+      catch (e) { throw new Error('Invalid API response — check deployment access is "Anyone".'); }
+    });
+}
+
+function apiPost(bodyObj) {
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(bodyObj)
+  })
+    .then(function (res) { return res.text(); })
+    .then(function (text) {
+      try { return JSON.parse(text); }
+      catch (e) { throw new Error('Invalid API response — check deployment access is "Anyone".'); }
+    });
+}
+
+/* ============================================================================
+   UTILITIES
+============================================================================ */
+function formatCurrency(n) {
+  const num = Number(n) || 0;
+  return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+function formatNumber(n) {
+  const num = Number(n) || 0;
+  return num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+</script>
+</body>
+</html>
