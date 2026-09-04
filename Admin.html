@@ -463,19 +463,17 @@
       <div class="selected-item-box" id="selectedItemBox"></div>
     </div>
 
-    <!-- No-barcode path: admin types the item's details directly -->
+    <!-- No-barcode path: only Total Amount + Total Qty are asked — no item
+         name or per-unit rate. Rate is derived (Total Amount / Total Qty). -->
     <div id="manualItemSection" style="display:none;">
-      <label class="form-label-sm">Item Name</label>
-      <input type="text" class="form-control mb-3" id="manualItemNameInput" placeholder="Enter item name">
-
       <label class="form-label-sm">Department</label>
       <input type="text" class="form-control mb-3" id="manualItemDeptInput" placeholder="Enter department (optional)">
 
-      <label class="form-label-sm">Rate (per unit)</label>
-      <input type="number" class="form-control mb-3" id="manualItemRateInput" min="0" step="any" placeholder="Enter sale rate">
+      <label class="form-label-sm">Total Amount (₹)</label>
+      <input type="number" class="form-control mb-3" id="manualTotalAmountInput" min="0" step="any" placeholder="Enter total amount for this entry">
     </div>
 
-    <label class="form-label-sm mt-2">Quantity</label>
+    <label class="form-label-sm mt-2" id="entryQtyLabel">Quantity</label>
     <input type="number" class="form-control mb-3" id="entryQtyInput" min="0" step="any" placeholder="Enter quantity">
 
     <label class="form-label-sm">Remarks (optional)</label>
@@ -854,18 +852,17 @@ function wireAddEntryModal() {
     const isManual = e.target.checked;
     document.getElementById('barcodeItemSection').style.display = isManual ? 'none' : 'block';
     document.getElementById('manualItemSection').style.display = isManual ? 'block' : 'none';
+    document.getElementById('entryQtyLabel').textContent = isManual ? 'Total Qty' : 'Quantity';
     // Switching modes invalidates whatever was picked/typed for the other
     // mode, so clear both sides to avoid saving stale data.
     selectedItem = null;
     document.getElementById('itemSearchInput').value = '';
     document.getElementById('selectedItemBox').classList.remove('show');
-    document.getElementById('manualItemNameInput').value = '';
     document.getElementById('manualItemDeptInput').value = '';
-    document.getElementById('manualItemRateInput').value = '';
+    document.getElementById('manualTotalAmountInput').value = '';
     updateSaveButtonState();
   });
-  document.getElementById('manualItemNameInput').addEventListener('input', updateSaveButtonState);
-  document.getElementById('manualItemRateInput').addEventListener('input', updateSaveButtonState);
+  document.getElementById('manualTotalAmountInput').addEventListener('input', updateSaveButtonState);
 
   document.getElementById('addEntrySaveBtn').addEventListener('click', submitAdminAddEntry);
 }
@@ -880,9 +877,9 @@ function openAddEntryModal() {
   document.getElementById('noBarcodeCheck').checked = false;
   document.getElementById('barcodeItemSection').style.display = 'block';
   document.getElementById('manualItemSection').style.display = 'none';
-  document.getElementById('manualItemNameInput').value = '';
+  document.getElementById('entryQtyLabel').textContent = 'Quantity';
   document.getElementById('manualItemDeptInput').value = '';
-  document.getElementById('manualItemRateInput').value = '';
+  document.getElementById('manualTotalAmountInput').value = '';
   hideModalMsg();
   selectedItem = null;
   updateSaveButtonState();
@@ -1112,17 +1109,16 @@ function updateSaveButtonState() {
   const isManual = document.getElementById('noBarcodeCheck').checked;
   const qtyVal = document.getElementById('entryQtyInput').value;
   const qty = Number(qtyVal);
-  const qtyValid = qtyVal !== '' && !isNaN(qty) && qty >= 0;
+  const qtyValid = qtyVal !== '' && !isNaN(qty) && qty > 0; // manual mode needs qty > 0 to derive a rate
 
   let valid;
   if (isManual) {
-    const name = document.getElementById('manualItemNameInput').value.trim();
-    const rateVal = document.getElementById('manualItemRateInput').value;
-    const rate = Number(rateVal);
-    const rateValid = rateVal !== '' && !isNaN(rate) && rate >= 0;
-    valid = name.length > 0 && rateValid && qtyValid;
+    const amtVal = document.getElementById('manualTotalAmountInput').value;
+    const amt = Number(amtVal);
+    const amtValid = amtVal !== '' && !isNaN(amt) && amt >= 0;
+    valid = amtValid && qtyValid;
   } else {
-    valid = !!selectedItem && qtyValid;
+    valid = !!selectedItem && qtyVal !== '' && !isNaN(qty) && qty >= 0;
   }
 
   document.getElementById('addEntrySaveBtn').disabled = !valid;
@@ -1142,23 +1138,22 @@ function submitAdminAddEntry() {
   const saveBtn = document.getElementById('addEntrySaveBtn');
 
   if (isManual) {
-    const itemName = document.getElementById('manualItemNameInput').value.trim();
     const dept = document.getElementById('manualItemDeptInput').value.trim();
-    const rate = Number(document.getElementById('manualItemRateInput').value);
+    const totalAmount = Number(document.getElementById('manualTotalAmountInput').value);
 
-    if (!itemName) { showModalMsg('Enter an item name.', 'err'); return; }
-    if (isNaN(rate) || rate < 0) { showModalMsg('Enter a valid rate.', 'err'); return; }
+    if (qty <= 0) { showModalMsg('Enter a valid total qty (greater than 0).', 'err'); return; }
+    if (isNaN(totalAmount) || totalAmount < 0) { showModalMsg('Enter a valid total amount.', 'err'); return; }
 
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
     apiPost({
       action: 'adminAddManualItem',
-      data: { branchId: branchId, itemName: itemName, dept: dept, rate: rate, qty: qty, remarks: remarks }
+      data: { branchId: branchId, dept: dept, totalAmount: totalAmount, qty: qty, remarks: remarks }
     }).then(function (result) {
       saveBtn.innerHTML = 'Save Entry';
       if (result.success) {
-        showModalMsg('Item created and entry saved.', 'ok');
+        showModalMsg('Entry saved.', 'ok');
         itemPickList = []; // force a fresh item list next time the modal opens, so the new item shows up in search
         setTimeout(function () {
           closeAddEntryModal();
