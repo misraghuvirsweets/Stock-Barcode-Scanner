@@ -364,8 +364,8 @@
   <span class="brand-name">Admin Dashboard</span>
   <div class="header-right">
     <select class="header-select" id="branchSelect">
-      <option value="BR1">Branch 1</option>
-      <option value="BR2">Branch 2</option>
+      <option value="BR1">Ram Mandir</option>
+      <option value="BR2">Vishrambagh</option>
     </select>
     <select class="header-select" id="monthSelect">
       <option value="all">All Time</option>
@@ -443,8 +443,8 @@
 
     <label class="form-label-sm" id="entryBranchLabel">Branch</label>
     <select class="form-select mb-3" id="entryBranchSelect">
-      <option value="BR1">Branch 1</option>
-      <option value="BR2">Branch 2</option>
+      <option value="BR1">Ram Mandir</option>
+      <option value="BR2">Vishrambagh</option>
     </select>
 
     <div class="form-check mb-3">
@@ -515,7 +515,8 @@
 ============================================================================ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBS7ITZkbwM6CWT4V2M_Jgsa5xHXLdON_uhRN5aNec205N-7-37rYmthq3KkbtlSy3uA/exec';
 
-const BRANCH_LABELS = { BR1: 'Branch 1', BR2: 'Branch 2' };
+// BR1 => Ram Mandir, BR2 => Vishrambagh (IDs unchanged so the API/sheets keep working)
+const BRANCH_LABELS = { BR1: 'Ram Mandir', BR2: 'Vishrambagh' };
 
 /* ============================================================================
    STATE
